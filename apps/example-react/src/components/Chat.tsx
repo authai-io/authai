@@ -1,34 +1,125 @@
-import { useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import type { ProviderId } from "@authai/react";
 
 type Msg = { role: "user" | "assistant"; content: string };
+type ModelEntry = { id: string; owned_by?: string };
 
 type Props = {
   jwt: string;
+  provider: ProviderId | null;
   backendUrl: string;
   onSignOut: () => void;
 };
 
-const MODELS = [
-  "gpt-5.4",
-  "gpt-5.4-mini",
-  "gpt-5.4-pro",
-  "gpt-5.4-codex",
-  "gpt-5.5",
-  "gpt-5.5-pro",
-];
+const PROVIDER_LABEL: Record<ProviderId, string> = {
+  openai: "ChatGPT",
+  xai: "Grok",
+  github: "GitHub Copilot",
+};
 
-export function Chat({ jwt, backendUrl, onSignOut }: Props) {
+export function Chat({ jwt, provider, backendUrl, onSignOut }: Props) {
+  const effectiveProvider: ProviderId = provider ?? "openai";
+  const [models, setModels] = useState<ModelEntry[]>([]);
+  const [model, setModel] = useState<string>("");
+  const [modelsErr, setModelsErr] = useState<string | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
-  const [input, setInput] = useState("");
-  const [model, setModel] = useState(MODELS[0]);
   const [streaming, setStreaming] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const transcriptRef = useRef<HTMLDivElement | null>(null);
 
-  async function send() {
-    const text = input.trim();
-    if (!text || streaming) return;
+  useEffect(() => {
+    let cancelled = false;
+    setModels([]);
+    setModel("");
+    setModelsErr(null);
+    (async () => {
+      try {
+        const res = await fetch(`${backendUrl}/models`, {
+          headers: { Authorization: `Bearer ${jwt}` },
+        });
+        if (!res.ok) throw new Error(`${res.status} ${await res.text().catch(() => "")}`);
+        const json = (await res.json()) as { data: ModelEntry[] };
+        if (cancelled) return;
+        setModels(json.data);
+        setModel(json.data[0]?.id ?? "");
+      } catch (e) {
+        if (cancelled) return;
+        setModelsErr((e as Error).message);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [jwt, backendUrl]);
+
+  useEffect(() => {
+    const el = transcriptRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [messages, streaming]);
+
+  return (
+    <>
+      <div className="session-bar">
+        <span className="session-meta">
+          Signed in with <strong>{PROVIDER_LABEL[effectiveProvider]}</strong>
+        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <select
+            className="model-select"
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            disabled={models.length === 0}
+          >
+            {models.length === 0 && <option value="">Loading…</option>}
+            {models.map((m) => (
+              <option key={m.id} value={m.id}>{m.id}</option>
+            ))}
+          </select>
+          <button className="btn-ghost" onClick={onSignOut}>Sign out</button>
+        </div>
+      </div>
+
+      {modelsErr && <p className="inline-error">Models: {modelsErr}</p>}
+
+      <div ref={transcriptRef} className="transcript">
+        {messages.length === 0 && !streaming && (
+          <p style={{ color: "var(--text-subtle)", margin: 0 }}>
+            Ask anything to get started.
+          </p>
+        )}
+        {messages.map((m, i) =>
+          m.role === "user" ? (
+            <div key={i} className="turn-user">
+              <div className="bubble">{m.content || " "}</div>
+            </div>
+          ) : (
+            <div key={i} className="turn-assistant">
+              <div className="body">
+                {m.content}
+                {streaming && i === messages.length - 1 && (
+                  m.content.length === 0 ? (
+                    <span className="thinking" aria-hidden="true"><span /><span /><span /></span>
+                  ) : (
+                    <span className="streaming-cursor" aria-hidden="true" />
+                  )
+                )}
+              </div>
+            </div>
+          ),
+        )}
+      </div>
+
+      {err && <p className="inline-error">{err}</p>}
+
+      <ReplyInput
+        disabled={!model || streaming}
+        onSubmit={(text) => streamChat(text)}
+      />
+    </>
+  );
+
+  async function streamChat(text: string) {
+    if (!text.trim() || !model || streaming) return;
     setErr(null);
-    setInput("");
     const next: Msg[] = [...messages, { role: "user", content: text }];
     setMessages([...next, { role: "assistant", content: "" }]);
     setStreaming(true);
@@ -43,8 +134,8 @@ export function Chat({ jwt, backendUrl, onSignOut }: Props) {
         body: JSON.stringify({ model, messages: next }),
       });
       if (!res.ok || !res.body) {
-        const text = await res.text().catch(() => "");
-        throw new Error(`backend ${res.status}: ${text}`);
+        const body = await res.text().catch(() => "");
+        throw new Error(`backend ${res.status}: ${body}`);
       }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -62,63 +153,81 @@ export function Chat({ jwt, backendUrl, onSignOut }: Props) {
       setStreaming(false);
     }
   }
+}
+
+function ReplyInput({
+  onSubmit,
+  disabled,
+  placeholder = "Reply…",
+}: {
+  onSubmit: (text: string) => void;
+  disabled?: boolean;
+  placeholder?: string;
+}) {
+  const [value, setValue] = useState("");
+  const ref = useRef<HTMLTextAreaElement | null>(null);
+  const trimmed = value.trim();
+  const canSubmit = trimmed.length > 0 && !disabled;
+
+  useEffect(() => { ref.current?.focus(); }, []);
+
+  useEffect(() => {
+    const ta = ref.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = `${Math.min(ta.scrollHeight, 168)}px`;
+  }, [value]);
+
+  function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (disabled) return;
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      submit();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setValue("");
+    }
+  }
+
+  function submit() {
+    if (!canSubmit) return;
+    onSubmit(trimmed);
+    setValue("");
+  }
 
   return (
-    <div className="col" style={{ gap: 16 }}>
-      <div className="row" style={{ alignItems: "center", gap: 12 }}>
-        <label className="muted" style={{ fontSize: 13 }}>Model:</label>
-        <select
-          value={model}
-          onChange={(e) => setModel(e.target.value)}
-          style={{
-            font: "inherit",
-            padding: "6px 10px",
-            borderRadius: 6,
-            border: "1px solid #d6d3d1",
-            background: "white",
-          }}
+    <div className="reply">
+      <textarea
+        ref={ref}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        disabled={disabled}
+        rows={1}
+        aria-label="Your message"
+      />
+      <button
+        type="button"
+        className="send-btn"
+        onClick={submit}
+        disabled={!canSubmit}
+        aria-label="Send"
+      >
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.25"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ transform: canSubmit ? "rotate(-90deg)" : "rotate(0deg)" }}
         >
-          {MODELS.map((m) => (
-            <option key={m} value={m}>{m}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="col" style={{ gap: 4 }}>
-        {messages.length === 0 && (
-          <p className="muted" style={{ margin: 0 }}>
-            Say something to get started.
-          </p>
-        )}
-        {messages.map((m, i) => (
-          <div key={i} className={`msg ${m.role}`}>
-            <strong style={{ display: "block", fontSize: 12, opacity: 0.6 }}>{m.role}</strong>
-            {m.content || (streaming && i === messages.length - 1 ? "…" : "")}
-          </div>
-        ))}
-      </div>
-
-      {err && <p style={{ color: "#b91c1c", margin: 0 }}>{err}</p>}
-
-      <div className="row">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type a message"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              send();
-            }
-          }}
-        />
-        <button onClick={send} disabled={streaming || !input.trim()}>
-          {streaming ? "…" : "Send"}
-        </button>
-      </div>
-
-      <button className="secondary" onClick={onSignOut} style={{ alignSelf: "flex-start" }}>
-        Sign out
+          <line x1="12" y1="19" x2="12" y2="5" />
+          <polyline points="5 12 12 5 19 12" />
+        </svg>
       </button>
     </div>
   );

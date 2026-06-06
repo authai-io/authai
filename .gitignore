@@ -10,9 +10,8 @@ dist
 # Reference checkout, not part of this project
 openclaw/
 
-# Excluded for now
+# Local working notes
 docs/
-README.md
 
 # Local SQLite databases (contain encrypted user records)
 *.db

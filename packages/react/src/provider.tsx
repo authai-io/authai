@@ -1,94 +1,221 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { revokeSession, signInWithChatGPT } from "./auth.js";
+import { decodeJwtProvider, revokeSession, signInWithProvider, type ProviderId } from "./auth.js";
 import { resolveStorage, type TokenStorage } from "./storage.js";
-
-export type AuthStatus = "signed-out" | "starting" | "awaiting-user" | "signed-in" | "error";
+import { AuthAIDialog, type DialogStep } from "./dialog/Dialog.js";
+import type { AuthAITheme } from "./dialog/theme.js";
 
 export type AuthAIContextValue = {
   relayUrl: string;
   jwt: string | null;
+  provider: ProviderId | null;
   isSignedIn: boolean;
-  status: AuthStatus;
-  verificationUrl: string | null;
-  userCode: string | null;
   error: string | null;
-  signIn: () => Promise<void>;
+  signIn: (provider?: ProviderId) => void;
   signOut: () => void;
 };
 
 const Ctx = createContext<AuthAIContextValue | null>(null);
 
+type Phase = "idle" | "explain" | "picker" | "fetching" | "code" | "success" | "error";
+
 export type AuthAIProviderProps = {
   relayUrl: string;
+  appName: string;
+  theme?: AuthAITheme;
   storage?: "localStorage" | "memory" | TokenStorage;
   children: React.ReactNode;
 };
 
-export function AuthAIProvider({ relayUrl, storage, children }: AuthAIProviderProps) {
+export function AuthAIProvider({
+  relayUrl, appName, theme, storage, children,
+}: AuthAIProviderProps) {
   const adapter = useMemo(() => resolveStorage(storage), [storage]);
   const [jwt, setJwt] = useState<string | null>(() => adapter.get());
-  const [status, setStatus] = useState<AuthStatus>(() => (adapter.get() ? "signed-in" : "signed-out"));
-  const [verificationUrl, setVerificationUrl] = useState<string | null>(null);
-  const [userCode, setUserCode] = useState<string | null>(null);
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [originStep, setOriginStep] = useState<DialogStep>("explain");
+  const [presetProvider, setPresetProvider] = useState<ProviderId | null>(null);
+  const [pickedProvider, setPickedProvider] = useState<ProviderId | null>(null);
+  const [code, setCode] = useState<{ userCode: string; verificationUrl: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [toastVisible, setToastVisible] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const signIn = useCallback(async () => {
+  const showToast = useCallback(() => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToastVisible(true);
+    toastTimerRef.current = setTimeout(() => setToastVisible(false), 1600);
+  }, []);
+
+  const copyCode = useCallback((value: string) => {
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        navigator.clipboard.writeText(value).catch(() => {});
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  const openVerification = useCallback((url: string) => {
+    if (typeof window === "undefined") return;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }, []);
+
+  const reset = useCallback(() => {
+    setPhase("idle");
+    setOriginStep("explain");
+    setPresetProvider(null);
+    setPickedProvider(null);
+    setCode(null);
+    setError(null);
+    setToastVisible(false);
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = null;
+    }
+  }, []);
+
+  const startFlow = useCallback(async (providerId: ProviderId) => {
+    if (!appName) throw new Error("AuthAIProvider requires an `appName` prop");
     abortRef.current?.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     setError(null);
-    setVerificationUrl(null);
-    setUserCode(null);
-    setStatus("starting");
+    setCode(null);
+    setPickedProvider(providerId);
+    setPhase("fetching");
     try {
-      const fresh = await signInWithChatGPT({
+      const fresh = await signInWithProvider({
         relayUrl,
+        provider: providerId,
         signal: ctrl.signal,
         onVerification: ({ verificationUrl, userCode }) => {
-          setVerificationUrl(verificationUrl);
-          setUserCode(userCode);
-          setStatus("awaiting-user");
+          setCode({ userCode, verificationUrl });
+          copyCode(userCode);
+          showToast();
+          setPhase((c) => (c === "fetching" ? "code" : c));
+          setOriginStep("code");
         },
       });
       adapter.set(fresh);
       setJwt(fresh);
-      setStatus("signed-in");
-      setVerificationUrl(null);
-      setUserCode(null);
+      setPhase("success");
+      setTimeout(() => reset(), 250);
     } catch (err) {
       if ((err as Error).name === "AbortError") return;
       setError((err as Error).message);
-      setStatus("error");
+      setPhase("error");
     }
-  }, [relayUrl, adapter]);
+  }, [appName, relayUrl, adapter, copyCode, showToast, reset]);
+
+  const signIn = useCallback((provider?: ProviderId) => {
+    if (!appName) throw new Error("AuthAIProvider requires an `appName` prop before signIn");
+    setError(null);
+    setCode(null);
+    setPickedProvider(null);
+    if (provider) {
+      setPresetProvider(provider);
+    } else {
+      setPresetProvider(null);
+    }
+    setPhase("explain");
+  }, [appName]);
+
+  const handleExplainContinue = useCallback(() => {
+    if (presetProvider) {
+      setOriginStep("explain");
+      startFlow(presetProvider);
+    } else {
+      setPhase("picker");
+    }
+  }, [presetProvider, startFlow]);
+
+  const handlePickProvider = useCallback((id: ProviderId) => {
+    setOriginStep("picker");
+    startFlow(id);
+  }, [startFlow]);
+
+  const handleOpenProvider = useCallback(() => {
+    if (!code) return;
+    openVerification(code.verificationUrl);
+  }, [code, openVerification]);
+
+  const handleManualCopy = useCallback(() => {
+    if (!code) return;
+    copyCode(code.userCode);
+    showToast();
+  }, [code, copyCode, showToast]);
 
   const signOut = useCallback(() => {
     abortRef.current?.abort();
-    if (jwt) revokeSession(relayUrl, jwt).catch(() => { /* best-effort */ });
+    if (jwt) revokeSession(relayUrl, jwt).catch(() => {});
     adapter.clear();
     setJwt(null);
-    setStatus("signed-out");
-    setVerificationUrl(null);
-    setUserCode(null);
-    setError(null);
-  }, [adapter, jwt, relayUrl]);
+    reset();
+  }, [adapter, jwt, relayUrl, reset]);
 
-  useEffect(() => () => abortRef.current?.abort(), []);
+  const cancel = useCallback(() => {
+    abortRef.current?.abort();
+    reset();
+  }, [reset]);
+
+  const handleTryDifferentProvider = useCallback(() => {
+    abortRef.current?.abort();
+    setError(null);
+    setCode(null);
+    setPickedProvider(null);
+    setPresetProvider(null);
+    setOriginStep("picker");
+    setPhase("picker");
+  }, []);
+
+  useEffect(() => () => {
+    abortRef.current?.abort();
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  }, []);
+
+  const dialogOpen =
+    phase === "explain" || phase === "picker" || phase === "fetching" ||
+    phase === "code" || phase === "error";
+  const dialogStep: DialogStep =
+    phase === "error" ? "error" :
+    phase === "picker" ? "picker" :
+    phase === "code" ? "code" :
+    phase === "fetching" ? originStep :
+    "explain";
 
   const value: AuthAIContextValue = {
     relayUrl,
     jwt,
+    provider: jwt ? decodeJwtProvider(jwt) : null,
     isSignedIn: jwt !== null,
-    status,
-    verificationUrl,
-    userCode,
     error,
     signIn,
     signOut,
   };
 
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={value}>
+      {children}
+      <AuthAIDialog
+        open={dialogOpen}
+        step={dialogStep}
+        appName={appName}
+        presetProvider={presetProvider}
+        pickedProvider={pickedProvider}
+        userCode={code?.userCode ?? null}
+        verificationUrl={code?.verificationUrl ?? null}
+        error={error}
+        theme={theme}
+        toastVisible={toastVisible}
+        onContinueExplain={handleExplainContinue}
+        onPickProvider={handlePickProvider}
+        onOpenProvider={handleOpenProvider}
+        onCopy={handleManualCopy}
+        onCancel={cancel}
+        onTryDifferentProvider={handleTryDifferentProvider}
+      />
+    </Ctx.Provider>
+  );
 }
 
 export function useAuthAI(): AuthAIContextValue {

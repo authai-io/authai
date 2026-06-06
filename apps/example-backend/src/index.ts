@@ -18,6 +18,20 @@ app.use("*", async (c, next) => {
 
 app.get("/", (c) => c.json({ ok: true, service: "example-backend", relay: RELAY_URL }));
 
+app.get("/models", async (c) => {
+  const auth = c.req.header("Authorization") || "";
+  const match = auth.match(/^Bearer\s+(.+)$/i);
+  if (!match) return c.json({ error: "missing bearer token" }, 401);
+  const jwt = match[1]!;
+  try {
+    const openai = new OpenAI({ apiKey: jwt, baseURL: `${RELAY_URL}/v1` });
+    const list = await openai.models.list();
+    return c.json({ data: list.data.map((m) => ({ id: m.id, owned_by: (m as any).owned_by })) });
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : String(err) }, 502);
+  }
+});
+
 app.post("/chat", async (c) => {
   const auth = c.req.header("Authorization") || "";
   const match = auth.match(/^Bearer\s+(.+)$/i);

@@ -1,5 +1,14 @@
+export type ProviderId = "openai" | "xai" | "github";
+
+export type ProviderInfo = {
+  id: ProviderId;
+  displayName: string;
+  models: readonly string[];
+};
+
 export type StartResponse = {
   sessionId: string;
+  provider: ProviderId;
   userCode: string;
   verificationUrl: string;
   expiresInMs: number;
@@ -14,6 +23,7 @@ export type PollResponse =
 
 export type SignInOptions = {
   relayUrl: string;
+  provider: ProviderId;
   onVerification: (info: {
     verificationUrl: string;
     userCode: string;
@@ -22,10 +32,10 @@ export type SignInOptions = {
   signal?: AbortSignal;
 };
 
-export async function signInWithChatGPT(options: SignInOptions): Promise<string> {
+export async function signInWithProvider(options: SignInOptions): Promise<string> {
   const start = await postJson<StartResponse>(
     joinUrl(options.relayUrl, "/auth/start"),
-    undefined,
+    { provider: options.provider },
     options.signal,
   );
 
@@ -53,6 +63,31 @@ export async function signInWithChatGPT(options: SignInOptions): Promise<string>
   throw new Error("authorization timed out");
 }
 
+export async function listProviders(relayUrl: string, signal?: AbortSignal): Promise<ProviderInfo[]> {
+  const res = await getJson<{ providers: ProviderInfo[] }>(
+    joinUrl(relayUrl, "/auth/providers"),
+    signal,
+  );
+  return res.providers;
+}
+
+export function decodeJwtProvider(jwt: string): ProviderId | null {
+  try {
+    const payloadPart = jwt.split(".")[1];
+    if (!payloadPart) return null;
+    const json = JSON.parse(
+      typeof atob === "function"
+        ? atob(payloadPart.replace(/-/g, "+").replace(/_/g, "/"))
+        : Buffer.from(payloadPart, "base64url").toString("utf-8"),
+    );
+    const prov = json?.prov;
+    if (prov === "openai" || prov === "xai" || prov === "github") return prov;
+    return "openai";
+  } catch {
+    return null;
+  }
+}
+
 export async function revokeSession(relayUrl: string, jwt: string): Promise<void> {
   await fetch(joinUrl(relayUrl, "/auth/revoke"), {
     method: "POST",
@@ -67,20 +102,26 @@ async function postJson<T>(url: string, body?: unknown, signal?: AbortSignal): P
     body: body !== undefined ? JSON.stringify(body) : undefined,
     signal,
   });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`relay ${url}: ${res.status} ${text}`);
-  }
-  return (await res.json()) as T;
+  return readJsonBody<T>(res, url);
 }
 
 async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
   const res = await fetch(url, { signal });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`relay ${url}: ${res.status} ${text}`);
+  return readJsonBody<T>(res, url);
+}
+
+async function readJsonBody<T>(res: Response, url: string): Promise<T> {
+  const text = await res.text().catch(() => "");
+  let body: any = null;
+  if (text.length > 0) {
+    try { body = JSON.parse(text); } catch { /* not json */ }
   }
-  return (await res.json()) as T;
+  if (!res.ok) {
+    if (body && typeof body.error === "string") throw new Error(body.error);
+    if (typeof body?.error?.message === "string") throw new Error(body.error.message);
+    throw new Error(`relay ${url}: ${res.status}`);
+  }
+  return body as T;
 }
 
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {
