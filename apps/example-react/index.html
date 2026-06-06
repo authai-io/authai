@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>chatgpt-connect demo</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", sans-serif;
+        background: #fafaf9;
+        color: #1c1917;
+      }
+      .container { max-width: 720px; margin: 0 auto; padding: 32px 20px; }
+      .card { background: white; border: 1px solid #e7e5e4; border-radius: 12px; padding: 20px; }
+      button {
+        font: inherit;
+        background: #0a0a0a;
+        color: white;
+        border: 0;
+        border-radius: 8px;
+        padding: 10px 16px;
+        cursor: pointer;
+      }
+      button.secondary {
+        background: white; color: #1c1917; border: 1px solid #d6d3d1;
+      }
+      button:disabled { opacity: 0.5; cursor: not-allowed; }
+      input, textarea {
+        font: inherit;
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d6d3d1;
+        border-radius: 8px;
+        background: white;
+      }
+      .code {
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 24px;
+        letter-spacing: 4px;
+        text-align: center;
+        padding: 16px;
+        background: #f5f5f4;
+        border-radius: 8px;
+        user-select: all;
+      }
+      .msg { padding: 10px 14px; border-radius: 10px; margin-bottom: 8px; white-space: pre-wrap; }
+      .msg.user { background: #e7e5e4; align-self: flex-end; }
+      .msg.assistant { background: #f5f5f4; }
+      .row { display: flex; gap: 8px; }
+      .col { display: flex; flex-direction: column; }
+      .muted { color: #78716c; font-size: 14px; }
+      h1 { margin: 0 0 8px; }
+      a { color: #0a0a0a; }
+      .modal-backdrop {
+        position: fixed; inset: 0; background: rgba(0,0,0,.4);
+        display: flex; align-items: center; justify-content: center; z-index: 50;
+      }
+      .modal { background: white; border-radius: 12px; padding: 24px; max-width: 420px; width: 90vw; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
