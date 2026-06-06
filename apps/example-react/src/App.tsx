@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AuthAIProvider, SignIn, useAuthAI } from "@authai/react";
 import { Chat } from "./components/Chat.js";
+import { Docs } from "./Docs.js";
 
 const RELAY_URL = import.meta.env.VITE_RELAY_URL ?? "http://localhost:3000";
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? "http://localhost:4000";
@@ -40,8 +41,36 @@ export function App() {
 
 function Shell({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void }) {
   const auth = useAuthAI();
+  const route = useHashRoute();
+  if (route.kind === "docs") return <Docs current={route.page} />;
   if (auth.isSignedIn) return <SignedInShell auth={auth} />;
   return <Landing mode={mode} setMode={setMode} />;
+}
+
+type Route =
+  | { kind: "home" }
+  | { kind: "docs"; page: string };
+
+function parseHashRoute(hash: string): Route {
+  const stripped = hash.replace(/^#\/?/, "");
+  if (stripped.startsWith("docs")) {
+    const parts = stripped.split("/");
+    return { kind: "docs", page: parts[1] ?? "introduction" };
+  }
+  return { kind: "home" };
+}
+
+function useHashRoute(): Route {
+  const [route, setRoute] = useState<Route>(() =>
+    typeof window === "undefined" ? { kind: "home" } : parseHashRoute(window.location.hash),
+  );
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onChange = () => setRoute(parseHashRoute(window.location.hash));
+    window.addEventListener("hashchange", onChange);
+    return () => window.removeEventListener("hashchange", onChange);
+  }, []);
+  return route;
 }
 
 function SignedInShell({ auth }: { auth: ReturnType<typeof useAuthAI> }) {
@@ -85,7 +114,7 @@ function Landing({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void }) 
             </svg>
             GitHub
           </a>
-          <a href="#integrate">Docs</a>
+          <a href="#/docs/introduction">Docs</a>
           <button
             type="button"
             className="landing-theme-toggle"
