@@ -54,11 +54,34 @@ function deriveBaseUrlFromCopilotToken(token: string): string | null {
   return null;
 }
 
+// Promise-coalescing for in-flight Copilot token exchanges. Without this,
+// N concurrent first requests for the same GitHub token each fire their own
+// /copilot_internal/v2/token call — a stampede that GitHub will eventually
+// rate-limit. Storing a `Promise<entry>` in `inFlight` means later callers
+// await the same fetch, and the entry is settled into `copilotTokenCache`
+// once for everyone. The in-flight map is cleared in `finally` so failed
+// exchanges don't poison subsequent retries.
+const inFlight = new Map<string, Promise<CachedCopilotToken>>();
+
 async function resolveCopilotToken(githubToken: string): Promise<CachedCopilotToken> {
   const key = cacheKey(githubToken);
   const cached = copilotTokenCache.get(key);
   if (cached && cached.expiresAt - Date.now() > 5 * 60 * 1000) return cached;
 
+  const existing = inFlight.get(key);
+  if (existing) return existing;
+
+  const promise = exchangeCopilotToken(githubToken, key).finally(() => {
+    inFlight.delete(key);
+  });
+  inFlight.set(key, promise);
+  return promise;
+}
+
+async function exchangeCopilotToken(
+  githubToken: string,
+  key: string,
+): Promise<CachedCopilotToken> {
   const res = await fetch(COPILOT_TOKEN_URL, {
     method: "GET",
     headers: {

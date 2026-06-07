@@ -80,7 +80,6 @@ export function createAuthRoutes(deps: {
         throw new Error(`provider ${session.providerId} did not return an accountId`);
       }
       const accountIdHash = identityId(deps.identitySecret, session.providerId, tokens.accountId);
-      const existing = await deps.store.findByAccountHash(accountIdHash);
       const recordKey = generateRecordKey();
       const now = Date.now();
       const refreshLifeMs = 30 * 24 * 60 * 60 * 1000;
@@ -95,29 +94,53 @@ export function createAuthRoutes(deps: {
       };
       const { iv, blob } = encryptJson(recordKey, payload);
 
-      const recordId = existing?.id ?? ulid();
-      await deps.store.put({
-        id: recordId,
+      // Atomic upsert keyed by accountIdHash. Two concurrent polls for the
+      // same account will both arrive here, but the DB's UNIQUE constraint
+      // ensures only one row exists and both callers receive the same id.
+      const resolved = await deps.store.upsertByAccountHash({
+        id: ulid(),
         iv,
         blob,
         accountIdHash,
-        createdAt: existing?.createdAt ?? now,
+        createdAt: now,
         updatedAt: now,
         expiresAt,
       });
 
       const jwt = await issueSessionJwt({
-        recordId,
+        recordId: resolved.id,
         recordKey,
         provider: session.providerId,
         secret: deps.jwtSecret,
       });
 
-      updateSession(sessionId, { status: "complete", jwt });
+      const accepted = updateSession(sessionId, { status: "complete", jwt });
+      if (!accepted) {
+        // Another concurrent poll already drove this session to a terminal
+        // state. Return whatever the session now holds rather than racing
+        // it: the user must see one consistent answer regardless of which
+        // poll arrives back at the client first.
+        const final = getSession(sessionId);
+        if (final?.status === "complete" && final.jwt) {
+          return c.json({ status: "complete", jwt: final.jwt });
+        }
+        if (final?.status === "error") {
+          return c.json({ status: "error", error: final.error });
+        }
+      }
       return c.json({ status: "complete", jwt });
     } catch (err) {
       const message = errorMessage(err);
-      updateSession(sessionId, { status: "error", error: message });
+      const accepted = updateSession(sessionId, { status: "error", error: message });
+      if (!accepted) {
+        // Another concurrent poll already completed (or already errored).
+        // Surface that terminal state instead of overwriting it with this
+        // race's error.
+        const final = getSession(sessionId);
+        if (final?.status === "complete" && final.jwt) {
+          return c.json({ status: "complete", jwt: final.jwt });
+        }
+      }
       return c.json({ status: "error", error: message });
     }
   });

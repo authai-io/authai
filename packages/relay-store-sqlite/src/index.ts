@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import type { AuthRecord, AuthRecordStore } from "@authai/relay";
+import type { AuthRecord, AuthRecordStore, UpdatePatch } from "@authai/relay";
 
 type Row = {
   id: string;
@@ -11,6 +11,16 @@ type Row = {
   expires_at: number;
 };
 
+// Schema notes:
+//
+//   - `account_id_hash` has a UNIQUE index so two concurrent sign-ins for the
+//     same provider account cannot create duplicate records. The upsert path
+//     leans on this constraint via `INSERT ... ON CONFLICT(account_id_hash)`.
+//
+//   - Old (pre-Wave-2) databases shipped a non-unique index by the same
+//     logical name. `migrateSchema()` below drops it and recreates as UNIQUE
+//     on startup. The migration aborts if real duplicates exist; the operator
+//     is expected to wipe or clean the row collisions first.
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS auth_records (
   id               TEXT    PRIMARY KEY,
@@ -21,74 +31,112 @@ CREATE TABLE IF NOT EXISTS auth_records (
   updated_at       INTEGER NOT NULL,
   expires_at       INTEGER NOT NULL
 );
-CREATE INDEX IF NOT EXISTS auth_records_by_account ON auth_records (account_id_hash);
-CREATE INDEX IF NOT EXISTS auth_records_by_expires ON auth_records (expires_at);
+CREATE UNIQUE INDEX IF NOT EXISTS auth_records_by_account
+  ON auth_records (account_id_hash);
+CREATE INDEX IF NOT EXISTS auth_records_by_expires
+  ON auth_records (expires_at);
 `;
+
+function migrateSchema(db: Database.Database): void {
+  // If the existing index isn't UNIQUE, drop and recreate. SQLite stores
+  // index metadata in sqlite_master.
+  type IndexRow = { name: string; sql: string | null };
+  const row = db
+    .prepare<[], IndexRow>(
+      `SELECT name, sql FROM sqlite_master
+       WHERE type='index' AND name='auth_records_by_account'`,
+    )
+    .get();
+  if (row && row.sql && !/UNIQUE/i.test(row.sql)) {
+    db.exec("DROP INDEX auth_records_by_account;");
+  }
+}
 
 export function createSqliteStore(path: string): AuthRecordStore {
   const db = new Database(path);
   db.pragma("journal_mode = WAL");
   db.exec(SCHEMA);
+  migrateSchema(db);
+  // Re-run SCHEMA after a potential drop so the unique index is in place.
+  db.exec(SCHEMA);
 
-  const put = db.prepare<[string, Buffer, Buffer, string, number, number, number]>(
-    `INSERT INTO auth_records (id, iv, blob, account_id_hash, created_at, updated_at, expires_at)
+  type UpsertRow = { id: string; created_at: number };
+  const upsertStmt = db.prepare<
+    [string, Buffer, Buffer, string, number, number, number],
+    UpsertRow
+  >(
+    `INSERT INTO auth_records
+       (id, iv, blob, account_id_hash, created_at, updated_at, expires_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)
-     ON CONFLICT(id) DO UPDATE SET
-       iv = excluded.iv,
-       blob = excluded.blob,
-       account_id_hash = excluded.account_id_hash,
+     ON CONFLICT(account_id_hash) DO UPDATE SET
+       iv         = excluded.iv,
+       blob       = excluded.blob,
        updated_at = excluded.updated_at,
-       expires_at = excluded.expires_at`,
+       expires_at = excluded.expires_at
+     RETURNING id, created_at`,
   );
+
   const getById = db.prepare<[string], Row>(`SELECT * FROM auth_records WHERE id = ?`);
-  const findHash = db.prepare<[string], Row>(
-    `SELECT * FROM auth_records WHERE account_id_hash = ? ORDER BY updated_at DESC LIMIT 1`,
+
+  // CAS update: the WHERE clause includes `updated_at = ?expected` so a
+  // concurrent writer that already advanced updated_at sees 0 changes.
+  const casUpdate = db.prepare<[Buffer, Buffer, number, number | null, string, number]>(
+    `UPDATE auth_records
+        SET iv         = ?,
+            blob       = ?,
+            updated_at = ?,
+            expires_at = COALESCE(?, expires_at)
+      WHERE id = ?
+        AND updated_at = ?`,
   );
-  const updateStmt = db.prepare<[Buffer, Buffer, number, number, string]>(
-    `UPDATE auth_records SET iv = ?, blob = ?, updated_at = ?, expires_at = ? WHERE id = ?`,
-  );
-  const updateBlobOnly = db.prepare<[Buffer, Buffer, number, string]>(
-    `UPDATE auth_records SET iv = ?, blob = ?, updated_at = ? WHERE id = ?`,
-  );
+
   const deleteStmt = db.prepare<[string]>(`DELETE FROM auth_records WHERE id = ?`);
   const sweep = db.prepare<[number]>(`DELETE FROM auth_records WHERE expires_at < ?`);
 
   return {
-    async put(r) {
-      put.run(
-        r.id,
-        Buffer.from(r.iv),
-        Buffer.from(r.blob),
-        r.accountIdHash,
-        r.createdAt,
-        r.updatedAt,
-        r.expiresAt,
+    async upsertByAccountHash(c: AuthRecord) {
+      const row = upsertStmt.get(
+        c.id,
+        Buffer.from(c.iv),
+        Buffer.from(c.blob),
+        c.accountIdHash,
+        c.createdAt,
+        c.updatedAt,
+        c.expiresAt,
       );
+      if (!row) {
+        // RETURNING should always produce a row on INSERT or DO UPDATE;
+        // this branch is defensive against driver edge cases.
+        throw new Error("upsertByAccountHash: no row returned");
+      }
+      return { id: row.id, createdAt: row.created_at };
     },
-    async get(id) {
+
+    async get(id: string) {
       const row = getById.get(id);
       return row ? rowToRecord(row) : null;
     },
-    async findByAccountHash(hash) {
-      const row = findHash.get(hash);
-      return row ? rowToRecord(row) : null;
+
+    async update(id: string, patch: UpdatePatch, expectedUpdatedAt: number) {
+      const info = casUpdate.run(
+        Buffer.from(patch.iv),
+        Buffer.from(patch.blob),
+        patch.updatedAt,
+        patch.expiresAt ?? null,
+        id,
+        expectedUpdatedAt,
+      );
+      return info.changes > 0;
     },
-    async update(id, patch) {
-      const iv = patch.iv ? Buffer.from(patch.iv) : null;
-      const blob = patch.blob ? Buffer.from(patch.blob) : null;
-      const updatedAt = patch.updatedAt ?? Date.now();
-      if (iv && blob && patch.expiresAt !== undefined) {
-        updateStmt.run(iv, blob, updatedAt, patch.expiresAt, id);
-      } else if (iv && blob) {
-        updateBlobOnly.run(iv, blob, updatedAt, id);
-      }
-    },
-    async delete(id) {
+
+    async delete(id: string) {
       deleteStmt.run(id);
     },
-    async sweepExpired(now) {
+
+    async sweepExpired(now: number) {
       return sweep.run(now).changes;
     },
+
     async close() {
       db.close();
     },

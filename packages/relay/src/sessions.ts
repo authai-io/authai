@@ -46,10 +46,27 @@ export function getSession(id: string): Session | undefined {
   return s;
 }
 
-export function updateSession(id: string, patch: Partial<Session>): void {
+/**
+ * Apply a patch to a session. Returns `true` if the patch was applied,
+ * `false` if the patch was rejected. A `false` outcome means the session
+ * already reached a terminal state — the caller raced another poll and
+ * lost, and should return whatever the terminal session now holds rather
+ * than overwriting it.
+ *
+ * Terminal states (`complete`, `error`, `expired`) cannot be overwritten
+ * by another terminal state. Non-terminal updates (e.g. heartbeats) are
+ * always applied while the session is still `pending`.
+ */
+export function updateSession(id: string, patch: Partial<Session>): boolean {
   const s = sessions.get(id);
-  if (!s) return;
+  if (!s) return false;
+  const isTerminalPatch =
+    patch.status === "complete" || patch.status === "error" || patch.status === "expired";
+  if (s.status !== "pending" && isTerminalPatch) {
+    return false;
+  }
   Object.assign(s, patch);
+  return true;
 }
 
 setInterval(() => {
