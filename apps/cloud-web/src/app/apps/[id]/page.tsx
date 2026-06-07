@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ulid } from "ulid";
 import { getSession } from "@/lib/session";
 import { getStore } from "@/lib/db";
+import { AuthedShell } from "../../authed-shell";
 
 export default async function AppDetailPage({
   params,
@@ -44,87 +45,69 @@ export default async function AppDetailPage({
   const recentEvents = await store.audit.listByApp(id, 20);
 
   return (
-    <>
-      <nav className="top">
-        <div>
-          <strong>AuthAI Cloud</strong>
-          <span className="muted"> · {app.name}</span>
-        </div>
-        <div>
-          <Link href="/dashboard">dashboard</Link>
-        </div>
-      </nav>
-      <main>
-        <h1>{app.name}</h1>
-        <p className="muted">App ID: <code>{app.id}</code></p>
+    <AuthedShell githubLogin={session.githubLogin} breadcrumb={app.name}>
+      <h1>{app.name}</h1>
+      <p className="au-card-meta" style={{ marginTop: -4, marginBottom: 24 }}>
+        {app.id}
+      </p>
 
-        <h2>Origin</h2>
-        <p>
-          <code>{app.origin}</code>
+      <h2>Origin</h2>
+      <div className="au-card">
+        <code style={{ fontFamily: "var(--font-mono)", fontSize: 13 }}>
+          {app.origin}
+        </code>
+        <p className="au-hint" style={{ marginTop: 10 }}>
+          The browser must send this exact value in the <code>Origin</code>{" "}
+          header on calls to <code>/auth/start</code>. The React SDK sets it
+          automatically — you usually don't need to think about this.
         </p>
-        <p className="field-hint">
-          The browser must send this exact value in the
-          <code> Origin </code> header when calling{" "}
-          <code>/auth/start</code>. Builders typically don't need to think
-          about this — the React SDK sets it automatically.
-        </p>
+      </div>
 
-        <h2>Limits</h2>
-        <table>
-          <tbody>
-            <tr>
-              <th>Per-minute</th>
-              <td>{app.rateLimitPerMin}</td>
-            </tr>
-            <tr>
-              <th>Per day</th>
-              <td>{app.dailyRequestCap}</td>
-            </tr>
-          </tbody>
-        </table>
+      <h2>Limits</h2>
+      <div className="au-card">
+        <div className="au-card-row">
+          <span>Requests per minute</span>
+          <strong>{app.rateLimitPerMin}</strong>
+        </div>
+        <div className="au-card-row" style={{ marginTop: 8 }}>
+          <span>Requests per day</span>
+          <strong>{app.dailyRequestCap}</strong>
+        </div>
+      </div>
 
-        <h2>Recent events</h2>
-        {recentEvents.length === 0 ? (
-          <p className="muted">No events yet.</p>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>When</th>
-                <th>Actor</th>
-                <th>Event</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentEvents.map((e) => (
-                <tr key={e.id}>
-                  <td className="muted">
-                    {new Date(e.ts).toISOString().replace("T", " ").slice(0, 19)}
-                  </td>
-                  <td>
-                    {e.actorType}:{e.actorId.slice(0, 8)}
-                  </td>
-                  <td>
-                    <code>{e.eventType}</code>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+      <h2>Recent events</h2>
+      {recentEvents.length === 0 ? (
+        <div className="au-empty">No events yet.</div>
+      ) : (
+        <div className="au-card" style={{ paddingTop: 4, paddingBottom: 4 }}>
+          {recentEvents.map((e) => (
+            <div key={e.id} className="au-event-row">
+              <span className="au-event-when">
+                {new Date(e.ts).toISOString().replace("T", " ").slice(0, 19)}
+              </span>
+              <span style={{ color: "var(--text-muted)" }}>
+                {e.actorType}:{e.actorId.slice(0, 8)}
+              </span>
+              <span className="au-event-type" style={{ marginLeft: "auto" }}>
+                {e.eventType}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
+      <div className="au-danger-zone">
         <h2>Danger zone</h2>
+        <p>
+          Revoke this app. All existing user JWTs return 401 immediately, and
+          new sign-ins are blocked. The audit log row is preserved.
+        </p>
         <form action={revoke}>
-          <p>
-            Revoke this app. All existing user JWTs return 401 immediately and
-            new sign-ins are blocked.
-          </p>
-          <button className="btn btn-danger" type="submit">
+          <button className="au-btn au-btn-danger" type="submit">
             Revoke app
           </button>
         </form>
-      </main>
-    </>
+      </div>
+    </AuthedShell>
   );
 }
-

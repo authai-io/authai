@@ -7,6 +7,7 @@ import { generateApiKey, hashApiKey, normalizeOrigin } from "@authai/cloud";
 import { CLI_BRIDGE_COOKIE, verifyBridge } from "@/lib/cli-bridge";
 import { setOneTimeKey } from "@/lib/one-time-key";
 import { cookies } from "next/headers";
+import { AuthedShell } from "../../authed-shell";
 
 export default async function NewAppPage({
   searchParams,
@@ -111,62 +112,61 @@ export default async function NewAppPage({
   }
 
   return (
-    <>
-      <nav className="top">
-        <div>
-          <strong>AuthAI Cloud</strong>
-          <span className="muted"> · new app</span>
+    <AuthedShell githubLogin={session.githubLogin} breadcrumb="New app">
+      <h1>Create app</h1>
+      <p>
+        Each app gets a unique <code>AUTH_AI_SECRET</code>. The relay uses it to
+        route requests to the right tenant.
+      </p>
+      {isCliFlow && (
+        <div className="au-callout">
+          You arrived here from <code>npx authai-cloud init</code>. After you
+          submit, we'll <strong>send the new secret back to the CLI</strong>{" "}
+          automatically.
         </div>
-        <div>
-          <Link href="/dashboard">dashboard</Link>
+      )}
+
+      <form action={createApp}>
+        {isCliFlow && <input type="hidden" name="cli" value="1" />}
+
+        <label className="au-label" htmlFor="name">App name</label>
+        <input
+          className="au-input"
+          id="name"
+          name="name"
+          placeholder="My AI App"
+          required
+          maxLength={80}
+        />
+        <div className="au-hint">
+          Shown on the ChatGPT consent screen when end users sign in.
         </div>
-      </nav>
-      <main>
-        <h1>Create app</h1>
-        {isCliFlow && (
-          <p className="card">
-            You arrived here from <code>npx authai-cloud init</code>. After
-            you submit, we'll send the new key back to the CLI automatically.
-          </p>
-        )}
 
-        <form action={createApp}>
-          {isCliFlow && <input type="hidden" name="cli" value="1" />}
-
-          <label htmlFor="name">App name</label>
-          <input
-            id="name"
-            name="name"
-            placeholder="My AI App"
-            required
-            maxLength={80}
-          />
-          <div className="field-hint">
-            Shown on the ChatGPT consent screen when end users sign in.
-          </div>
-
-          <label htmlFor="origin">Origin</label>
-          <input
-            id="origin"
-            name="origin"
-            placeholder="https://myapp.com"
-            required
-            pattern="https?://.+"
-          />
+        <label className="au-label" htmlFor="origin">Origin</label>
+        <input
+          className="au-input"
+          id="origin"
+          name="origin"
+          placeholder="https://myapp.com"
+          required
+          pattern="https?://.+"
+        />
           <div className="field-hint">
             Full URL — scheme + host + optional port. Use
-            <code> http://localhost:3000</code> for local dev. Production
-            origins need a DNS TXT record to lift the ephemeral rate limit.
-          </div>
+          <code>http://localhost:3000</code> for local dev. Scheme + host (+
+          optional port) only — no path.
+        </div>
 
-          <p style={{ marginTop: 24 }}>
-            <button className="btn" type="submit">
-              Create app
-            </button>
-          </p>
-        </form>
-      </main>
-    </>
+        <p style={{ marginTop: 32, display: "flex", gap: 12 }}>
+          <button className="au-btn" type="submit">
+            Create app
+          </button>
+          <Link href="/dashboard" className="au-btn au-btn-secondary">
+            Cancel
+          </Link>
+        </p>
+      </form>
+    </AuthedShell>
   );
 }
 
