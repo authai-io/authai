@@ -20,7 +20,14 @@ export function buildAuthorizeUrl(state: string, returnTo: string | null): strin
   const url = new URL("https://github.com/login/oauth/authorize");
   url.searchParams.set("client_id", GITHUB_CLIENT_ID);
   url.searchParams.set("redirect_uri", `${WEBAPP_URL}${REDIRECT_PATH}`);
-  url.searchParams.set("scope", "read:user user:email");
+  // Minimum scope. `user:email` lets us call /user/emails to find the
+  // user's verified primary email — needed for app-owner notifications.
+  // We deliberately omit `read:user`: the basic /user endpoint returns
+  // id + login + public profile without any scope, which is all we need
+  // for ownership attribution. Asking for read:user would surface "Read
+  // all user profile data" on GitHub's consent screen — too much for
+  // what we actually use.
+  url.searchParams.set("scope", "user:email");
   url.searchParams.set("state", state);
   if (returnTo) url.searchParams.set("allow_signup", "true");
   return url.toString();
