@@ -146,7 +146,7 @@ If you don't want to run the relay yourself, the same code is hosted as a free s
 
 ```bash
 npx authai-cloud init
-# → opens cloud.authai.dev in your browser to sign in with GitHub,
+# → opens authai.io in your browser to sign in with GitHub,
 #   create an app, and writes AUTH_AI_SECRET=... to .env
 ```
 
@@ -157,7 +157,7 @@ import OpenAI from "openai";
 
 const openai = new OpenAI({
   apiKey: jwt,
-  baseURL: "https://relay.authai.dev/v1",
+  baseURL: "https://relay.authai.io/v1",
   defaultHeaders: { "x-authai-secret": process.env.AUTH_AI_SECRET! },
 });
 ```
@@ -166,8 +166,8 @@ const openai = new OpenAI({
 
 Two domains:
 
-- **`cloud.authai.dev`** — Next.js webapp. Landing page, GitHub sign-in, dashboard, docs viewer, CLI bridge. You manage apps here.
-- **`relay.authai.dev`** — Hono relay. Pure data plane. The endpoint your end users sign in against and your backend hits for model calls.
+- **`authai.io`** — Next.js webapp. Landing page, GitHub sign-in, dashboard, docs viewer, CLI bridge. You manage apps here.
+- **`relay.authai.io`** — Hono relay. Pure data plane. The endpoint your end users sign in against and your backend hits for model calls.
 
 Same encryption model as self-hosting. The cloud host runs the same code from this repo and stores only ciphertext — per-record AES keys still live exclusively in the user's JWT and never reach the relay's servers in a decryptable form. See [docs/reference.md](./docs/reference.md) for the full architecture.
 
@@ -185,8 +185,8 @@ packages/
 └── react                <AuthAIProvider>, <SignInWithChatGPT>, useAuthAI()
 apps/
 ├── relay-server         executable that boots the community (self-hosted) relay
-├── cloud-relay-server   executable that boots the cloud edition's relay (Fly.io)
-├── cloud-web            Next.js webapp for AuthAI Cloud (Vercel) — landing, sign-in, dashboard, docs viewer, CLI bridge
+├── cloud-relay-server   executable that boots the cloud edition's relay (Hetzner+Dokku)
+├── cloud-web            Next.js webapp for AuthAI Cloud (Hetzner+Dokku) — landing, sign-in, dashboard, docs viewer, CLI bridge
 ├── example-backend      tiny Node demo using the openai SDK against the relay
 └── example-react        Vite + React frontend demo
 ```

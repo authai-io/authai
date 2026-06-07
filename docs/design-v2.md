@@ -2,7 +2,7 @@
 
 ## Scope
 
-v2 is self-hosted only. We ship one open-source relay anyone can clone, configure, and run. The public demo at `relay.authai.dev` (whenever it exists) is just a deployed instance of that same code. We are not building a SaaS, we are not signing app developers up, and we are not handling end-user OpenAI tokens for them — that's the point of the encryption model.
+v2 is self-hosted only. We ship one open-source relay anyone can clone, configure, and run. The public demo at `relay.authai.io` (whenever it exists) is just a deployed instance of that same code. We are not building a SaaS, we are not signing app developers up, and we are not handling end-user OpenAI tokens for them — that's the point of the encryption model.
 
 A cloud/multitenant edition can be added later as its own package boundary; it is explicitly not part of v2.
 
@@ -189,7 +189,7 @@ We expose only one client-side primitive: the JWT.
 import { AuthAIProvider, SignInWithChatGPT, useAuthAI } from "@authai/react";
 
 <AuthAIProvider
-  relayUrl="https://relay.authai.dev"
+  relayUrl="https://relay.authai.io"
   storage="localStorage"        // "localStorage" | "memory" | custom adapter
 >
   <App />

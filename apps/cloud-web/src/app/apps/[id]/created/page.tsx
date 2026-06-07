@@ -152,7 +152,7 @@ export default async function CreatedPage({
             Install the SDK: <code>npm install @authai/react</code>
           </li>
           <li>
-            Wrap your app with <code>&lt;AuthAIProvider relayUrl="https://relay.authai.dev"&gt;</code>
+            Wrap your app with <code>&lt;AuthAIProvider relayUrl="https://relay.authai.io"&gt;</code>
           </li>
           <li>
             Drop in <code>&lt;SignInWithChatGPT /&gt;</code>

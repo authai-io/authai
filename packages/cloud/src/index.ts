@@ -4,8 +4,8 @@
  * The cloud edition's relay is pure data-plane: it accepts encrypted-token
  * reads/writes, runs the OAuth device-code flow, and proxies model calls.
  * App registration, the dashboard, and builder identity all live in a
- * separate webapp (`apps/cloud-web`, deployed to Vercel at
- * `cloud.authai.dev`). This package provides ONLY the relay-side
+ * separate webapp (`apps/cloud-web`, deployed via Dokku at
+ * `authai.io`). This package provides ONLY the relay-side
  * primitives the webapp doesn't:
  *
  *   - CloudTenantResolver (per-request tenant lookup by Origin or

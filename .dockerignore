@@ -1,0 +1,58 @@
+# Keep Docker build contexts lean. Both apps/*/Dockerfile use the
+# monorepo root as build context — without this file Docker would copy
+# node_modules + .next + git history into every layer.
+
+# Dependency artifacts (re-installed inside the build via pnpm)
+**/node_modules
+.pnpm-store
+
+# Build output (every package's dist/, every Next.js .next/)
+**/dist
+**/.next
+**/.turbo
+**/.vite
+**/build
+
+# Generated files (the cloud-web docs bake script writes here at prebuild)
+**/src/lib/generated
+
+# OS / IDE noise
+**/.DS_Store
+.vscode
+.idea
+
+# Local env files (containers get config from Dokku env, not from files)
+.env
+.env.*
+**/.env
+**/.env.local
+**/.env.production
+**/.env.development
+
+# Logs + test artifacts
+*.log
+**/coverage
+**/.tsbuildinfo
+**/next-env.d.ts
+
+# Local SQLite databases (community edition test data — never want in
+# the cloud image)
+*.db
+*.db-shm
+*.db-wal
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# CI + docs that don't affect the runtime
+.github
+
+# Reference checkout sitting alongside the repo (not part of this build)
+openclaw/
+
+# Worktree state, tooling, etc.
+.context/
+.claude
+.cursor

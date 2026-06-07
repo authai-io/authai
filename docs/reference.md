@@ -1,6 +1,6 @@
 # AuthAI: how it works under the hood
 
-This page describes the moving parts of an AuthAI deployment. It's written for self-hosters and contributors who want to understand the wiring before changing it. The community edition (one relay, one tenant, SQLite) is the same code as the cloud edition (many tenants, Postgres, Redis, hosted at `relay.authai.dev` + a Next.js dashboard at `cloud.authai.dev`). Both share the crypto, JWT, and provider layers.
+This page describes the moving parts of an AuthAI deployment. It's written for self-hosters and contributors who want to understand the wiring before changing it. The community edition (one relay, one tenant, SQLite) is the same code as the cloud edition (many tenants, Postgres, Redis, hosted at `relay.authai.io` + a Next.js dashboard at `authai.io`). Both share the crypto, JWT, and provider layers.
 
 If you just want to use AuthAI in your app, [installation.md](./installation.md) and the README are the right places to start.
 
@@ -8,22 +8,23 @@ If you just want to use AuthAI in your app, [installation.md](./installation.md)
 
 The cloud edition is two separate deployments that share Postgres:
 
-| Process            | Deploy      | Domain               | Owns                                                |
-| ------------------ | ----------- | -------------------- | --------------------------------------------------- |
-| **cloud-relay-server** | Fly.io      | `relay.authai.dev`   | `/auth/*` (device-code, JWT), `/v1/*` (model proxy). Pure data plane. |
-| **cloud-web**      | Vercel      | `cloud.authai.dev`   | Landing page, GitHub OAuth, dashboard, app CRUD, docs viewer, CLI bridge. Pure control plane. |
+| Process            | Deploy           | Domain                              | Owns                                                |
+| ------------------ | ---------------- | ----------------------------------- | --------------------------------------------------- |
+| **cloud-relay-server** | Hetzner+Dokku | `relay.authai.io`                   | `/auth/*` (device-code, JWT), `/v1/*` (model proxy). Pure data plane. |
+| **cloud-web**      | Hetzner+Dokku    | `authai.io` (+ `www.authai.io`)     | Landing page, GitHub OAuth, dashboard, app CRUD, docs viewer, CLI bridge. Pure control plane. |
 
 The relay reads the `apps` table. The webapp writes it. They share no code beyond `@authai/cloud` (resolver, kill switch, identity derivation) and `@authai/relay-store-postgres`. There is NO admin API on the relay.
 
 ```
-                      ┌────────────────────────────────────┐
-                      │ cloud.authai.dev  (Next.js, Vercel)│
-   browser ──────────►│  • landing                          │
-   (humans)           │  • GitHub OAuth (web flow)          │
-                      │  • /dashboard, /apps/new            │
-                      │  • /cli-init (bridge for npx flow)  │
-                      │  • /docs                            │
-                      └────────────────┬───────────────────┘
+                      ┌────────────────────────────────────────┐
+                      │ authai.io + www.authai.io               │
+                      │   (Next.js, Hetzner+Dokku)              │
+   browser ──────────►│  • landing                              │
+   (humans)           │  • GitHub OAuth (web flow)              │
+                      │  • /dashboard, /apps/new                │
+                      │  • /cli-init (bridge for npx flow)      │
+                      │  • /docs                                │
+                      └────────────────┬───────────────────────┘
                                        │ writes apps table
                                        ▼
                           ┌────────────────────────┐
@@ -34,17 +35,17 @@ The relay reads the `apps` table. The webapp writes it. They share no code beyon
                                        ▲                  │
                   reads tenants ───────┘                  │
                                                           │
-                      ┌──────────────────────────────────┴─┐
-   builder backend ──►│ relay.authai.dev  (Hono, Fly.io)   │
-   end-user browser ─►│  • /auth/start, /auth/poll, /whoami │
-                      │  • /v1/chat/completions, /v1/models │
-                      │  • CloudTenantResolver, kill switch │
-                      └────────────────────────────────────┘
+                      ┌──────────────────────────────────┴───────┐
+   builder backend ──►│ relay.authai.io  (Hono, Hetzner+Dokku)   │
+   end-user browser ─►│  • /auth/start, /auth/poll, /whoami       │
+                      │  • /v1/chat/completions, /v1/models       │
+                      │  • CloudTenantResolver, kill switch       │
+                      └──────────────────────────────────────────┘
 ```
 
 ## Editions at a glance
 
-| Capability                         | Community (self-hosted) | Cloud (`cloud.authai.dev`) |
+| Capability                         | Community (self-hosted) | Cloud (`authai.io`) |
 | ---------------------------------- | :---------------------: | :------------------------: |
 | Sign in with ChatGPT / Copilot / xAI | ✓                       | ✓                          |
 | Encrypted token storage             | ✓ SQLite                | ✓ Postgres                 |
@@ -54,7 +55,7 @@ The relay reads the `apps` table. The webapp writes it. They share no code beyon
 | Global cost-cap kill switch        | —                       | ✓                          |
 | Per-app rate limits                | operator-supplied        | ✓ built-in (Redis)         |
 | Consent dialog + per-app budgets   | —                       | (v2 — not in v1)           |
-| `cloud.authai.dev/me` page         | —                       | (v2 — not in v1)           |
+| `authai.io/me` page         | —                       | (v2 — not in v1)           |
 
 The crypto model is identical across editions. The cloud edition adds tenant-scoping on top.
 

@@ -40,7 +40,7 @@ export type CacheAdapter = {
 export type SessionOptions = {
   /** The session JWT issued by the AuthAI relay (forwarded from the client). */
   jwt: string | null | undefined;
-  /** Relay base URL, e.g. https://relay.authai.dev. No trailing slash needed. */
+  /** Relay base URL, e.g. https://relay.authai.io. No trailing slash needed. */
   relayUrl: string;
   /**
    * Cache identity responses for ~60s (default true). Identity caching is

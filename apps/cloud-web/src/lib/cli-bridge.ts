@@ -2,7 +2,7 @@
  * CLI bridge — the browser dance that backs `npx authai-cloud init`.
  *
  *   1. CLI binds a local HTTP listener on a random port and opens
- *      `https://cloud.authai.dev/cli-init?port=PORT&state=STATE`.
+ *      `https://authai.io/cli-init?port=PORT&state=STATE`.
  *   2. /cli-init validates state + port, stores them in a short-lived
  *      cookie, redirects to /sign-in?return=/apps/new?cli=1.
  *   3. After app creation, the action returns the API key. The webapp

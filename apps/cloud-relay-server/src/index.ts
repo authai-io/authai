@@ -8,10 +8,10 @@
  *   - The /auth/* and /v1/* relay routes via @authai/relay
  *
  * App registration, dashboard, and builder identity live in apps/cloud-web
- * (the Next.js webapp at cloud.authai.dev). The relay reads the apps
+ * (the Next.js webapp at authai.io). The relay reads the apps
  * table; the webapp writes it. They share data, not code.
  *
- * Deploy target: Fly.io machines behind `relay.authai.dev`.
+ * Deploy target: Hetzner box via Dokku, served behind `relay.authai.io`.
  *
  * Self-hosted single-tenant setup uses apps/relay-server instead.
  */
@@ -52,7 +52,7 @@ if (edition !== "cloud") {
 
 const port = Number(process.env.AUTH_AI_PORT ?? 3000);
 const cloudOriginator = process.env.AUTH_AI_CLOUD_ORIGINATOR ?? "AuthAI Cloud";
-const webAppUrl = (process.env.AUTH_AI_CLOUD_WEB_URL ?? "https://cloud.authai.dev")
+const webAppUrl = (process.env.AUTH_AI_CLOUD_WEB_URL ?? "https://authai.io")
   .replace(/\/$/, "");
 
 const jwtSecret = new Uint8Array(Buffer.from(required("AUTH_AI_JWT_SECRET"), "hex"));

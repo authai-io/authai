@@ -221,7 +221,7 @@ function FrontendSnippet() {
 {"  "}<span className="com">{`// Wrap once. The provider mounts the sign-in dialog and exposes`}</span>{"\n"}
 {"  "}<span className="com">{`// the session via useAuthAI() anywhere below it.`}</span>{"\n"}
 {"  "}<span className="kw">return</span> <span className="punc">(</span>{"\n"}
-{"    "}<span className="punc">{"<"}</span><span className="fn">AuthAIProvider</span> <span className="var">relayUrl</span><span className="punc">=</span><span className="str">"https://relay.authai.dev"</span> <span className="var">appName</span><span className="punc">=</span><span className="str">"MyApp"</span><span className="punc">{">"}</span>{"\n"}
+{"    "}<span className="punc">{"<"}</span><span className="fn">AuthAIProvider</span> <span className="var">relayUrl</span><span className="punc">=</span><span className="str">"https://relay.authai.io"</span> <span className="var">appName</span><span className="punc">=</span><span className="str">"MyApp"</span><span className="punc">{">"}</span>{"\n"}
 {"      "}<span className="punc">{"<"}</span><span className="fn">Chat</span> <span className="punc">/{">"}</span>{"\n"}
 {"    "}<span className="punc">{"</"}</span><span className="fn">AuthAIProvider</span><span className="punc">{">"}</span>{"\n"}
 {"  "}<span className="punc">);</span>{"\n"}
@@ -248,7 +248,7 @@ function BackendSnippet() {
 {"  "}<span className="com">{`// the underlying OAuth tokens never reach your backend.`}</span>{"\n"}
 {"  "}<span className="kw">const</span> <span className="punc">{"{"}</span> <span className="var">user</span><span className="punc">,</span> <span className="var">apiKey</span><span className="punc">,</span> <span className="var">baseURL</span><span className="punc">,</span> <span className="var">openai</span> <span className="punc">{"}"}</span> <span className="punc">=</span> <span className="kw">await</span> <span className="var">authai</span><span className="punc">.</span><span className="fn">session</span><span className="punc">({"{"}</span>{"\n"}
 {"    "}<span className="var">jwt</span><span className="punc">,</span>{"\n"}
-{"    "}<span className="var">relayUrl</span><span className="punc">:</span> <span className="str">"https://relay.authai.dev"</span><span className="punc">,</span>{"\n"}
+{"    "}<span className="var">relayUrl</span><span className="punc">:</span> <span className="str">"https://relay.authai.io"</span><span className="punc">,</span>{"\n"}
 {"  "}<span className="punc">{"}"});</span>{"\n\n"}
 {"  "}<span className="com">{`// user.id        — opaque, stable across re-sign-ins, namespaced per provider`}</span>{"\n"}
 {"  "}<span className="com">{`// user.provider  — "openai" | "xai" | "github"`}</span>{"\n"}

@@ -3,7 +3,7 @@
  *
  * Steps:
  *   1. Bind 127.0.0.1 on a random port.
- *   2. Open https://cloud.authai.dev/cli-init?port=PORT&state=STATE in the
+ *   2. Open https://authai.io/cli-init?port=PORT&state=STATE in the
  *      user's browser. The webapp handles GitHub OAuth + app creation.
  *   3. The "App created" page submits an HTML form POST to
  *      http://127.0.0.1:PORT/callback with `key`, `state`, `app_id` in
@@ -35,8 +35,8 @@ export type InitOptions = {
   force?: boolean;
 };
 
-const DEFAULT_WEBAPP = "https://cloud.authai.dev";
-const DEFAULT_RELAY = "https://relay.authai.dev";
+const DEFAULT_WEBAPP = "https://authai.io";
+const DEFAULT_RELAY = "https://relay.authai.io";
 const DEFAULT_ENV_FILE = ".env";
 
 export async function runInit(opts: InitOptions): Promise<void> {

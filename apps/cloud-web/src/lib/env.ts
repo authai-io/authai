@@ -16,8 +16,8 @@ export function optional(name: string, fallback: string): string {
   return process.env[name] ?? fallback;
 }
 
-export const RELAY_URL = optional("AUTH_AI_CLOUD_RELAY_URL", "https://relay.authai.dev");
-export const WEBAPP_URL = optional("AUTH_AI_CLOUD_WEB_URL", "https://cloud.authai.dev");
+export const RELAY_URL = optional("AUTH_AI_CLOUD_RELAY_URL", "https://relay.authai.io");
+export const WEBAPP_URL = optional("AUTH_AI_CLOUD_WEB_URL", "https://authai.io");
 
 // Webapp-side GitHub OAuth client. SEPARATE from the relay's identity —
 // this app uses the web OAuth flow (client secret + redirect), the relay
