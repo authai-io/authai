@@ -142,12 +142,12 @@ Sending an unsupported model name (e.g. `gpt-4`) returns a 400 from the Codex ba
 
 ## Use AuthAI Cloud instead (skip the setup)
 
-If you don't want to run the relay yourself, the same code is hosted at `cloud.authai.dev` as a free service. One command from a fresh project:
+If you don't want to run the relay yourself, the same code is hosted as a free service. One command from a fresh project:
 
 ```bash
 npx authai-cloud init
-# → opens GitHub for sign-in, prompts for app name + origin,
-#   writes AUTH_AI_KEY=... to .env
+# → opens cloud.authai.dev in your browser to sign in with GitHub,
+#   create an app, and writes AUTH_AI_KEY=... to .env
 ```
 
 Then in your backend:
@@ -157,12 +157,17 @@ import OpenAI from "openai";
 
 const openai = new OpenAI({
   apiKey: jwt,
-  baseURL: "https://cloud.authai.dev/v1",
+  baseURL: "https://relay.authai.dev/v1",
   defaultHeaders: { "x-authai-key": process.env.AUTH_AI_KEY! },
 });
 ```
 
-Same encryption model as self-hosting. The cloud host runs the same code from this repo and stores only ciphertext — per-record AES keys still live exclusively in the user's JWT and never reach our servers in a decryptable form. See [docs/reference.md](./docs/reference.md) for the full architecture.
+Two domains:
+
+- **`cloud.authai.dev`** — Next.js webapp. Landing page, GitHub sign-in, dashboard, docs viewer, CLI bridge. You manage apps here.
+- **`relay.authai.dev`** — Hono relay. Pure data plane. The endpoint your end users sign in against and your backend hits for model calls.
+
+Same encryption model as self-hosting. The cloud host runs the same code from this repo and stores only ciphertext — per-record AES keys still live exclusively in the user's JWT and never reach the relay's servers in a decryptable form. See [docs/reference.md](./docs/reference.md) for the full architecture.
 
 AuthAI Cloud is experimental and rate-limited. Treat it as a free demo service.
 
@@ -178,7 +183,8 @@ packages/
 └── react                <AuthAIProvider>, <SignInWithChatGPT>, useAuthAI()
 apps/
 ├── relay-server         executable that boots the community (self-hosted) relay
-├── cloud-relay-server   executable that boots the cloud edition
+├── cloud-relay-server   executable that boots the cloud edition's relay (Fly.io)
+├── cloud-web            Next.js webapp for AuthAI Cloud (Vercel) — landing, sign-in, dashboard, docs viewer, CLI bridge
 ├── example-backend      tiny Node demo using the openai SDK against the relay
 └── example-react        Vite + React frontend demo
 ```

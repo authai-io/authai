@@ -7,6 +7,11 @@ dist
 .vite
 .turbo
 
+# Next.js build output (cloud-web)
+.next
+next-env.d.ts
+*.tsbuildinfo
+
 # Reference checkout, not part of this project
 openclaw/
 

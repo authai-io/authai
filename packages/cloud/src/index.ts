@@ -1,20 +1,22 @@
 /**
- * @authai/cloud — the cloud edition's runtime add-ons for the AuthAI relay.
+ * @authai/cloud — cloud-edition runtime add-ons for the AuthAI relay.
  *
- * The community edition (single-tenant, self-hosted) does not need this
- * package at all — `@authai/relay` + `@authai/relay-store-sqlite` is
- * complete on its own.
+ * The cloud edition's relay is pure data-plane: it accepts encrypted-token
+ * reads/writes, runs the OAuth device-code flow, and proxies model calls.
+ * App registration, the dashboard, and builder identity all live in a
+ * separate webapp (`apps/cloud-web`, deployed to Vercel at
+ * `cloud.authai.dev`). This package provides ONLY the relay-side
+ * primitives the webapp doesn't:
  *
- * The cloud edition wires:
  *   - CloudTenantResolver (per-request tenant lookup by Origin or
  *     x-authai-key header)
- *   - HKDF-derived per-app identitySecret
- *   - Admin API (POST/GET/DELETE /admin/apps) with GitHub-OAuth auth
- *   - Audit log writes for app lifecycle events
+ *   - HKDF per-app identitySecret derivation
+ *   - Kill switch state machine + per-app rate limiter
+ *   - DNS TXT origin verification
+ *   - Edition gate
  *
- * Lane C adds origin verification + rate limits + kill switch.
- *
- * LICENSE: BSL-1.1-style source-available. See packages/cloud/LICENSE.
+ * The webapp talks to the same Postgres `apps` table the relay reads.
+ * They share data, not code paths.
  */
 
 export { CloudTenantResolver, createMemoryCache } from "./tenant.js";
@@ -26,15 +28,6 @@ export {
   generateApiKey,
   generateVerifyToken,
 } from "./identity.js";
-
-export {
-  issueAdminJwt,
-  verifyAdminJwt,
-  fetchGithubUser,
-} from "./admin-auth.js";
-
-export { createAdminRoutes } from "./admin-routes.js";
-export type { AdminRoutesConfig } from "./admin-routes.js";
 
 export {
   verifyOriginByDns,

@@ -1,72 +1,48 @@
 /**
- * `authai-cloud init` — the activation flow.
+ * `authai-cloud init` — option B activation flow.
  *
  * Steps:
- *   1. Prompt for app name + origin (unless provided as flags)
- *   2. GitHub device-code OAuth (no browser redirect URL needed)
- *   3. POST /admin/login → admin session JWT
- *   4. POST /admin/apps → create the app, receive AUTH_AI_KEY + verify token
- *   5. Write AUTH_AI_KEY to .env (refuse-on-existing without --force)
- *   6. Print SDK install snippet
+ *   1. Bind localhost on a random port.
+ *   2. Open https://cloud.authai.dev/cli-init?port=PORT&state=STATE in the
+ *      user's browser. The webapp handles GitHub OAuth + app creation.
+ *   3. The webapp 302s the browser back to http://127.0.0.1:PORT/callback
+ *      ?key=AUTH_AI_KEY&state=STATE&app_id=...&verify_token=...
+ *   4. Listener accepts the callback, validates state, closes, writes
+ *      AUTH_AI_KEY to .env, prints SDK install instructions.
  *
- * Errors are surfaced to stderr with a clear message; the bin script
- * sets exit 1.
+ * No GitHub OAuth code in the CLI. No /admin endpoints on the relay.
+ * Just localhost ↔ browser ↔ webapp.
  */
 
 import { promises as fs } from "node:fs";
-import { createInterface } from "node:readline/promises";
-import { stdin, stdout } from "node:process";
+import { createServer, type Server, type IncomingMessage, type ServerResponse } from "node:http";
+import { randomBytes } from "node:crypto";
+import { spawn } from "node:child_process";
+import { platform } from "node:os";
 
 export type InitOptions = {
-  name?: string;
-  origin?: string;
+  webappUrl?: string;
   relayUrl?: string;
   envFile?: string;
   force?: boolean;
 };
 
-const DEFAULT_RELAY = "https://cloud.authai.dev";
+const DEFAULT_WEBAPP = "https://cloud.authai.dev";
+const DEFAULT_RELAY = "https://relay.authai.dev";
 const DEFAULT_ENV_FILE = ".env";
 
-// AuthAI Cloud's public GitHub OAuth client_id. Device-code flow does not
-// require a client secret — the client_id alone is the identifier on the
-// GitHub side. Operators forking AuthAI Cloud register their own.
-const GITHUB_OAUTH_CLIENT_ID =
-  process.env.AUTH_AI_CLOUD_GITHUB_CLIENT_ID ?? "PLACEHOLDER_CLIENT_ID";
-
 export async function runInit(opts: InitOptions): Promise<void> {
+  const webappUrl = (opts.webappUrl ?? DEFAULT_WEBAPP).replace(/\/$/, "");
   const relayUrl = (opts.relayUrl ?? DEFAULT_RELAY).replace(/\/$/, "");
   const envFile = opts.envFile ?? DEFAULT_ENV_FILE;
 
   console.log(`\nAuthAI Cloud setup\n`);
-  console.log(`Relay: ${relayUrl}`);
-  console.log(`Env file: ${envFile}\n`);
+  console.log(`Webapp:  ${webappUrl}`);
+  console.log(`Relay:   ${relayUrl}`);
+  console.log(`Env:     ${envFile}\n`);
 
-  const rl = createInterface({ input: stdin, output: stdout });
-  let appName = opts.name;
-  let origin = opts.origin;
-  try {
-    if (!appName) appName = (await rl.question("App name (shown on consent screen): ")).trim();
-    if (!origin) {
-      origin = (
-        await rl.question("App origin (e.g. https://myapp.com or http://localhost:3000): ")
-      ).trim();
-    }
-  } finally {
-    rl.close();
-  }
-
-  if (!appName || !origin) {
-    throw new Error("name and origin are required");
-  }
-  if (!isValidOrigin(origin)) {
-    throw new Error(`invalid origin: ${origin} (must be a full URL with scheme + host)`);
-  }
-
-  // Check env file BEFORE we burn a GitHub OAuth round-trip. If it already
-  // contains AUTH_AI_KEY and --force isn't set, fail fast.
-  const envExists = await fileExists(envFile);
-  if (envExists) {
+  // Pre-flight: refuse to overwrite an existing AUTH_AI_KEY (unless --force).
+  if (await fileExists(envFile)) {
     const current = await fs.readFile(envFile, "utf8");
     if (/^AUTH_AI_KEY=/m.test(current) && !opts.force) {
       throw new Error(
@@ -75,47 +51,23 @@ export async function runInit(opts: InitOptions): Promise<void> {
     }
   }
 
-  console.log(`\n1/4 Authenticating with GitHub (device code)...`);
-  const githubToken = await githubDeviceCodeFlow();
-  console.log(`✓ GitHub authentication complete\n`);
-
-  console.log(`2/4 Exchanging GitHub token for AuthAI admin session...`);
-  const adminLoginRes = await fetch(`${relayUrl}/admin/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ github_access_token: githubToken }),
+  const state = randomBytes(16).toString("hex");
+  const result = await waitForBrowserCallback(state, (port) => {
+    const target = new URL(`${webappUrl}/cli-init`);
+    target.searchParams.set("port", String(port));
+    target.searchParams.set("state", state);
+    console.log(`\n1/2 Opening your browser to sign in...`);
+    console.log(`     ${target.toString()}\n`);
+    openInBrowser(target.toString()).catch(() => {
+      // Browser auto-open is best-effort. The URL is also printed above so
+      // the user can paste it manually.
+    });
   });
-  if (!adminLoginRes.ok) {
-    throw new Error(`admin login failed: ${adminLoginRes.status} ${await adminLoginRes.text()}`);
-  }
-  const adminLogin = (await adminLoginRes.json()) as {
-    admin_jwt: string;
-    user: { id: string; login: string; email?: string };
-  };
-  console.log(`✓ Signed in as @${adminLogin.user.login}\n`);
 
-  console.log(`3/4 Creating app "${appName}" with origin ${origin}...`);
-  const createRes = await fetch(`${relayUrl}/admin/apps`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${adminLogin.admin_jwt}`,
-    },
-    body: JSON.stringify({ name: appName, origin }),
-  });
-  if (!createRes.ok) {
-    const text = await createRes.text();
-    throw new Error(`create app failed: ${createRes.status} ${text}`);
-  }
-  const created = (await createRes.json()) as {
-    app: { id: string; name: string; origin: string; origin_verified: boolean };
-    api_key: string;
-    verify_dns_txt: string | null;
-  };
-  console.log(`✓ App created: ${created.app.id}\n`);
+  console.log(`✓ Received API key from webapp\n`);
 
-  console.log(`4/4 Writing AUTH_AI_KEY to ${envFile}...`);
-  await writeEnvKey(envFile, created.api_key, opts.force ?? false);
+  console.log(`2/2 Writing AUTH_AI_KEY to ${envFile}...`);
+  await writeEnvKey(envFile, result.key, opts.force ?? false);
   console.log(`✓ ${envFile} updated\n`);
 
   console.log(`──────────────────────────────────────────────────────────`);
@@ -131,14 +83,12 @@ export async function runInit(opts: InitOptions): Promise<void> {
   console.log(`       <SignInWithChatGPT />`);
   console.log(``);
 
-  if (created.verify_dns_txt) {
+  if (result.verifyToken) {
     console.log(`──────────────────────────────────────────────────────────`);
-    console.log(`Your origin needs DNS verification before lifting the`);
-    console.log(`ephemeral-bucket rate limit. Add this TXT record:\n`);
-    console.log(`  Host:  ${new URL(origin).hostname}`);
-    console.log(`  Type:  TXT`);
-    console.log(`  Value: ${created.verify_dns_txt}\n`);
-    console.log(`The relay re-checks DNS every 60 seconds.`);
+    console.log(`Your origin needs DNS verification before the per-day cap`);
+    console.log(`lifts. Publish this TXT record:\n`);
+    console.log(`  Value: authai-verify=${result.verifyToken}\n`);
+    console.log(`Then revisit ${webappUrl}/apps/${result.appId} to check status.`);
   } else {
     console.log(`Origin auto-verified (localhost or *.vercel.app).`);
   }
@@ -146,77 +96,115 @@ export async function runInit(opts: InitOptions): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// GitHub device-code OAuth
+// Browser callback listener
 // ---------------------------------------------------------------------------
 
-async function githubDeviceCodeFlow(): Promise<string> {
-  const start = await fetch("https://github.com/login/device/code", {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      client_id: GITHUB_OAUTH_CLIENT_ID,
-      scope: "read:user user:email",
-    }),
-  });
-  if (!start.ok) {
-    throw new Error(`github device-code start failed: ${start.status}`);
-  }
-  const device = (await start.json()) as {
-    device_code: string;
-    user_code: string;
-    verification_uri: string;
-    expires_in: number;
-    interval: number;
-  };
+type CallbackResult = {
+  key: string;
+  appId?: string;
+  verifyToken?: string;
+};
 
-  console.log(`\n   Open this URL in your browser:  ${device.verification_uri}`);
-  console.log(`   Enter this code:                ${device.user_code}\n`);
+async function waitForBrowserCallback(
+  expectedState: string,
+  onPortBound: (port: number) => void,
+): Promise<CallbackResult> {
+  return new Promise<CallbackResult>((resolve, reject) => {
+    let server: Server;
+    const timeoutMs = 5 * 60 * 1000; // 5 min
+    const timeout = setTimeout(() => {
+      try { server.close(); } catch { /* noop */ }
+      reject(new Error("timed out waiting for browser callback"));
+    }, timeoutMs);
 
-  const deadline = Date.now() + device.expires_in * 1000;
-  // Github recommends sleeping >= the suggested interval; we bump it 1s to
-  // avoid race-induced slow_down responses.
-  let interval = (device.interval + 1) * 1000;
+    server = createServer((req: IncomingMessage, res: ServerResponse) => {
+      if (!req.url) {
+        res.writeHead(400).end("missing url");
+        return;
+      }
+      const url = new URL(req.url, "http://127.0.0.1");
+      if (url.pathname !== "/callback") {
+        res.writeHead(404).end("not found");
+        return;
+      }
+      const state = url.searchParams.get("state") ?? "";
+      const key = url.searchParams.get("key") ?? "";
+      const appId = url.searchParams.get("app_id") ?? undefined;
+      const verifyToken = url.searchParams.get("verify_token") ?? undefined;
+      if (state !== expectedState) {
+        res.writeHead(400).end("state mismatch — refusing to use this key");
+        clearTimeout(timeout);
+        try { server.close(); } catch { /* noop */ }
+        reject(new Error("state mismatch on browser callback"));
+        return;
+      }
+      if (!key) {
+        res.writeHead(400).end("no key in callback");
+        clearTimeout(timeout);
+        try { server.close(); } catch { /* noop */ }
+        reject(new Error("no key in browser callback"));
+        return;
+      }
 
-  while (Date.now() < deadline) {
-    await sleep(interval);
-    const poll = await fetch("https://github.com/login/oauth/access_token", {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        client_id: GITHUB_OAUTH_CLIENT_ID,
-        device_code: device.device_code,
-        grant_type: "urn:ietf:params:oauth:grant-type:device_code",
-      }),
+      res.writeHead(200, { "Content-Type": "text/html" });
+      res.end(
+        `<!doctype html><html><body style="font-family:system-ui;padding:48px;text-align:center">` +
+          `<h2>You can close this tab.</h2>` +
+          `<p>Return to your terminal — the CLI has your key.</p>` +
+          `</body></html>`,
+      );
+      clearTimeout(timeout);
+      // setImmediate so the HTTP response actually flushes before close.
+      setImmediate(() => {
+        try { server.close(); } catch { /* noop */ }
+        resolve({ key, appId, verifyToken });
+      });
     });
-    if (!poll.ok) {
-      throw new Error(`github poll failed: ${poll.status}`);
-    }
-    const data = (await poll.json()) as {
-      access_token?: string;
-      error?: string;
-      interval?: number;
-    };
-    if (data.access_token) return data.access_token;
-    if (data.error === "authorization_pending") continue;
-    if (data.error === "slow_down") {
-      interval = (data.interval ?? device.interval + 5) * 1000;
-      continue;
-    }
-    if (data.error === "expired_token") {
-      throw new Error("github authorization expired — please re-run");
-    }
-    if (data.error === "access_denied") {
-      throw new Error("github authorization was denied");
-    }
-    throw new Error(`github poll returned error: ${data.error ?? "unknown"}`);
+
+    server.on("error", (err) => {
+      clearTimeout(timeout);
+      reject(err);
+    });
+
+    // Bind ephemeral port (port=0). 127.0.0.1 only — never bind to 0.0.0.0
+    // because the callback URL leaks the key into local network shoulder-
+    // surfing range.
+    server.listen(0, "127.0.0.1", () => {
+      const addr = server.address();
+      if (!addr || typeof addr === "string") {
+        reject(new Error("could not bind local port"));
+        return;
+      }
+      onPortBound(addr.port);
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Open URL in default browser
+// ---------------------------------------------------------------------------
+
+async function openInBrowser(url: string): Promise<void> {
+  const os = platform();
+  let cmd: string;
+  let args: string[];
+  if (os === "darwin") {
+    cmd = "open";
+    args = [url];
+  } else if (os === "win32") {
+    cmd = "cmd";
+    args = ["/c", "start", "", url];
+  } else {
+    cmd = "xdg-open";
+    args = [url];
   }
-  throw new Error("github authorization timed out");
+  return new Promise<void>((resolve, reject) => {
+    const child = spawn(cmd, args, { detached: true, stdio: "ignore" });
+    child.unref();
+    child.on("error", reject);
+    // Best-effort — once the browser is spawned we're done.
+    setImmediate(resolve);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -228,7 +216,6 @@ async function writeEnvKey(path: string, key: string, force: boolean): Promise<v
   if (await fileExists(path)) {
     current = await fs.readFile(path, "utf8");
   }
-
   const line = `AUTH_AI_KEY=${key}`;
   if (/^AUTH_AI_KEY=/m.test(current)) {
     if (!force) {
@@ -251,18 +238,4 @@ async function fileExists(path: string): Promise<boolean> {
   } catch {
     return false;
   }
-}
-
-function isValidOrigin(origin: string): boolean {
-  try {
-    const url = new URL(origin);
-    if (url.protocol !== "http:" && url.protocol !== "https:") return false;
-    return url.pathname === "/" && url.search === "" && url.hash === "";
-  } catch {
-    return false;
-  }
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
 }

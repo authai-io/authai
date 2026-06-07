@@ -1,8 +1,46 @@
 # AuthAI: how it works under the hood
 
-This page describes the moving parts of an AuthAI deployment. It's written for self-hosters and contributors who want to understand the wiring before changing it. The community edition (one relay, one tenant, SQLite) is the same code as the cloud edition (many tenants, Postgres, Redis, hosted at `cloud.authai.dev`). Both share the crypto, JWT, and provider layers.
+This page describes the moving parts of an AuthAI deployment. It's written for self-hosters and contributors who want to understand the wiring before changing it. The community edition (one relay, one tenant, SQLite) is the same code as the cloud edition (many tenants, Postgres, Redis, hosted at `relay.authai.dev` + a Next.js dashboard at `cloud.authai.dev`). Both share the crypto, JWT, and provider layers.
 
 If you just want to use AuthAI in your app, [installation.md](./installation.md) and the README are the right places to start.
+
+## Cloud edition: relay + webapp split
+
+The cloud edition is two separate deployments that share Postgres:
+
+| Process            | Deploy      | Domain               | Owns                                                |
+| ------------------ | ----------- | -------------------- | --------------------------------------------------- |
+| **cloud-relay-server** | Fly.io      | `relay.authai.dev`   | `/auth/*` (device-code, JWT), `/v1/*` (model proxy). Pure data plane. |
+| **cloud-web**      | Vercel      | `cloud.authai.dev`   | Landing page, GitHub OAuth, dashboard, app CRUD, docs viewer, CLI bridge. Pure control plane. |
+
+The relay reads the `apps` table. The webapp writes it. They share no code beyond `@authai/cloud` (resolver, kill switch, identity derivation) and `@authai/relay-store-postgres`. There is NO admin API on the relay.
+
+```
+                      ┌────────────────────────────────────┐
+                      │ cloud.authai.dev  (Next.js, Vercel)│
+   browser ──────────►│  • landing                          │
+   (humans)           │  • GitHub OAuth (web flow)          │
+                      │  • /dashboard, /apps/new            │
+                      │  • /cli-init (bridge for npx flow)  │
+                      │  • /docs                            │
+                      └────────────────┬───────────────────┘
+                                       │ writes apps table
+                                       ▼
+                          ┌────────────────────────┐
+                          │  shared Postgres        │◄────┐
+                          │  (auth_records,         │     │ reads apps
+                          │   apps, audit_events)   │     │
+                          └────────────────────────┘     │
+                                       ▲                  │
+                  reads tenants ───────┘                  │
+                                                          │
+                      ┌──────────────────────────────────┴─┐
+   builder backend ──►│ relay.authai.dev  (Hono, Fly.io)   │
+   end-user browser ─►│  • /auth/start, /auth/poll, /whoami │
+                      │  • /v1/chat/completions, /v1/models │
+                      │  • CloudTenantResolver, kill switch │
+                      └────────────────────────────────────┘
+```
 
 ## Editions at a glance
 
@@ -201,12 +239,14 @@ created_at, updated_at
 | Postgres store + apps + audit         | `@authai/relay-store-postgres` | `index.ts`                    |
 | Cloud tenant resolver (Origin / api key) | `@authai/cloud`             | `tenant.ts`                   |
 | HKDF per-app identity derivation      | `@authai/cloud`                | `identity.ts`                 |
-| Admin OAuth + admin routes            | `@authai/cloud`                | `admin-auth.ts`, `admin-routes.ts` |
 | Kill switch + rate limiter            | `@authai/cloud`                | `kill-switch.ts`              |
 | DNS TXT origin verification           | `@authai/cloud`                | `origin-verify.ts`            |
 | `npx authai-cloud init` CLI           | `@authai/cli`                  | `bin.ts`, `init.ts`           |
 | Self-hosted boot                      | `apps/relay-server`            | `index.ts`                    |
-| Cloud boot                            | `apps/cloud-relay-server`      | `index.ts`                    |
+| Cloud relay boot                      | `apps/cloud-relay-server`      | `index.ts`                    |
+| Cloud webapp (landing/dashboard/docs/CLI bridge) | `apps/cloud-web`    | `src/app/`                    |
+| Webapp GitHub OAuth (web flow)        | `apps/cloud-web`               | `src/lib/github.ts`           |
+| Webapp session cookie + CLI bridge    | `apps/cloud-web`               | `src/lib/session.ts`, `cli-bridge.ts` |
 
 ## Rotation procedures
 

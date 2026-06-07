@@ -81,6 +81,64 @@ A full sign-in cycle is then driven from a browser by `@authai/react` — see [i
 
 The full threat model is in [security.md](./security.md).
 
+## Custom middleware (rate-limit, body-limit, logging)
+
+The relay deliberately ships **no** rate limiter, body-size cap, or request logger. Operators run AuthAI behind everything from edge proxies that already do this work to bare Node servers that don't. `createRelayApp()` accepts a `middleware: MiddlewareHandler[]` array that installs in front of every relay route — including `/auth/*` where the JWT isn't yet known.
+
+Edit `apps/relay-server/src/index.ts` to wire your own middleware:
+
+```ts
+import { createRelayApp } from "@authai/relay";
+import type { MiddlewareHandler } from "hono";
+
+const middleware: MiddlewareHandler[] = [
+  // Cap request bodies before they hit /v1/chat/completions. The relay
+  // streams responses but the request body is still bounded by what
+  // your provider accepts, so a few-hundred-KB cap is plenty.
+  async (c, next) => {
+    const len = Number(c.req.header("content-length") ?? "0");
+    if (len > 256 * 1024) {
+      return c.json({ error: "payload too large" }, 413);
+    }
+    return next();
+  },
+
+  // Per-IP rate limit. Pick whatever fits your hosting — Upstash,
+  // Redis, an in-memory token bucket for a single-node deploy. Keep
+  // limits PER-IP at the relay layer; per-user limits belong in your
+  // app's backend where you already know the user id.
+  async (c, next) => {
+    const ip = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    if (await isOverLimit(ip)) {
+      return c.json({ error: "rate limited" }, 429);
+    }
+    return next();
+  },
+
+  // Structured request log. NEVER log the Authorization header — that
+  // would write user session JWTs into your log pipeline. Hash it if
+  // you need a stable per-session correlation id.
+  async (c, next) => {
+    const start = Date.now();
+    await next();
+    console.log(
+      JSON.stringify({
+        m: c.req.method,
+        p: c.req.path,
+        s: c.res.status,
+        ms: Date.now() - start,
+      }),
+    );
+  },
+];
+
+app = createRelayApp({ store, jwtSecret, identitySecret, originator, middleware });
+```
+
+Middleware runs in array order, before AuthAI's CORS layer and before `/auth/*` and `/v1/*`. Errors thrown from middleware short-circuit the request as 500 unless the middleware sets its own status.
+
+**What NOT to put here:** anything that depends on knowing the calling user. The JWT isn't verified until inside `/v1/*`, so middleware sees raw inbound traffic only.
+
 ## Deploying
 
 The relay is a stateless Hono server. SQLite makes it single-instance by default; horizontal scaling needs a shared `AuthRecordStore`, which today means waiting on the Postgres driver or writing your own.

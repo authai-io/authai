@@ -1,17 +1,19 @@
 /**
- * AuthAI Cloud relay server boot.
+ * AuthAI Cloud relay server boot — pure data-plane.
  *
  * Wires:
- *   - Postgres-backed store + apps + audit
+ *   - Postgres-backed store (auth records + apps + audit_events)
  *   - Redis-backed kill switch + per-app rate limiter
  *   - CloudTenantResolver pulling tenant from x-authai-key or Origin header
- *   - Admin routes for /admin/* (app registration, GitHub OAuth handoff)
- *   - The standard /auth/* and /v1/* relay routes via @authai/relay
+ *   - The /auth/* and /v1/* relay routes via @authai/relay
  *
- * Self-host setup uses apps/relay-server instead — this server is the
- * cloud edition only.
+ * App registration, dashboard, and builder identity live in apps/cloud-web
+ * (the Next.js webapp at cloud.authai.dev). The relay reads the apps
+ * table; the webapp writes it. They share data, not code.
  *
- * Required env vars are loud-fail. Optional env vars have safe defaults.
+ * Deploy target: Fly.io machines behind `relay.authai.dev`.
+ *
+ * Self-hosted single-tenant setup uses apps/relay-server instead.
  */
 
 import { serve } from "@hono/node-server";
@@ -24,7 +26,6 @@ import {
 import { createPostgresStore } from "@authai/relay-store-postgres";
 import {
   CloudTenantResolver,
-  createAdminRoutes,
   createKillSwitch,
   createRateLimiter,
   createMemoryCache,
@@ -52,22 +53,16 @@ if (edition !== "cloud") {
 
 const port = Number(process.env.AUTH_AI_PORT ?? 3000);
 const cloudOriginator = process.env.AUTH_AI_CLOUD_ORIGINATOR ?? "AuthAI Cloud";
+const webAppUrl = (process.env.AUTH_AI_CLOUD_WEB_URL ?? "https://cloud.authai.dev")
+  .replace(/\/$/, "");
 
-// Secrets (all 32-byte hex).
 const jwtSecret = new Uint8Array(Buffer.from(required("AUTH_AI_JWT_SECRET"), "hex"));
-const adminJwtSecret = new Uint8Array(
-  Buffer.from(required("AUTH_AI_ADMIN_JWT_SECRET"), "hex"),
-);
 const masterIdentitySecret = Buffer.from(
   required("AUTH_AI_CLOUD_MASTER_SECRET"),
   "hex",
 );
 
-if (
-  jwtSecret.length < 32 ||
-  adminJwtSecret.length < 32 ||
-  masterIdentitySecret.length < 32
-) {
+if (jwtSecret.length < 32 || masterIdentitySecret.length < 32) {
   console.error(
     "[cloud-relay-server] secrets must be at least 32 bytes hex " +
       "(use `openssl rand -hex 32`)",
@@ -77,10 +72,6 @@ if (
 
 const databaseUrl = required("AUTH_AI_DATABASE_URL");
 const redisUrl = required("AUTH_AI_REDIS_URL");
-
-// Daily cost cap is the hard wall against runaway bills. The soft threshold
-// (default 80%) triggers `paused-new` ahead of the cliff. Defaults are safe
-// for a hobby project: 5000/day = ~150 ChatGPT requests/min sustained.
 const dailyRequestCap = Number(process.env.AUTH_AI_CLOUD_DAILY_CAP ?? "5000");
 
 console.log("[cloud-relay-server] connecting to Postgres + Redis...");
@@ -88,9 +79,8 @@ const store = await createPostgresStore({ connectionString: databaseUrl });
 const redis = new Redis(redisUrl);
 
 const killSwitchEventLog = (event: KillSwitchEvent) => {
-  // The simplest possible alert path: log to stderr in structured JSON.
-  // Operators wire fly logs → an external pager (PagerDuty, Slack, etc.).
-  // Wave-2 of cloud hosting can replace this with a real webhook.
+  // Simplest possible alert path: structured stderr JSON. Operators wire
+  // Fly logs → external pager (PagerDuty, Slack, etc.).
   console.error(
     JSON.stringify({
       kind: "authai.cloud.kill_switch_event",
@@ -130,9 +120,7 @@ const relayApp = createRelayApp({
   jwtSecret,
   tenantResolver,
   middleware: [
-    // Kill switch sees every request before the tenant resolver. paused-new
-    // returns 503 from /auth/start (the new-sign-in path); read-only blocks
-    // /v1/*. Other paths pass through.
+    // Kill switch sees every request before the tenant resolver.
     async (c, next) => {
       const state = await killSwitch.currentState();
       if (state === "paused-new" && c.req.path.startsWith("/auth/start")) {
@@ -158,15 +146,12 @@ const relayApp = createRelayApp({
       return next();
     },
 
-    // Per-app rate limit. Runs after tenant resolution would but pulls
-    // tenant out of context — we re-resolve here cheaply because the
-    // CloudTenantResolver cache keeps Postgres pressure low.
+    // Per-app rate limit on /v1/*. The tenant resolver runs again inside
+    // this middleware so we have the appId before rate-limiting.
     async (c, next) => {
-      // Only enforce on /v1/* — admin paths and /auth flow have their own
-      // caps elsewhere.
       if (!c.req.path.startsWith("/v1/")) return next();
       const tenant = await tenantResolver.resolve(c);
-      if (!tenant?.appId) return next(); // fall through; the tenant middleware will 401
+      if (!tenant?.appId) return next(); // tenant middleware will 401
       const app = await store.apps.getById(tenant.appId);
       if (!app) return next();
       const decision = await rateLimiter.check(app.id, app.rateLimitPerMin);
@@ -182,62 +167,36 @@ const relayApp = createRelayApp({
           429,
         );
       }
-      // Count toward the global daily cap. Doing this AFTER the per-app
-      // check means a single bad-actor app can't burn the global cap by
-      // itself — its per-app limit cuts in first.
+      // Global daily cap recorded AFTER per-app check so one bad-actor app
+      // can't burn the global cap by itself.
       await killSwitch.recordRequest();
       return next();
     },
   ],
 });
 
-const adminRoutes = createAdminRoutes({
-  appStore: store.apps,
-  auditStore: store.audit,
-  adminJwtSecret,
-});
-
-// Compose: relayApp handles /auth/*, /v1/*; we serve the landing page at /,
-// admin under /admin, and a health endpoint at /healthz.
+// Root composition:
+//   /healthz   liveness for Fly
+//   /          → 302 to the webapp (relay is data-plane only)
+//   /auth/*    relay
+//   /v1/*      relay
 const root = new Hono();
 
-// Health endpoint first (registered before mounting the relay so it
-// always wins, even if the relay's "/" handler is later in priority).
 root.get("/healthz", (c) =>
   c.json({ ok: true, edition: "cloud", originator: cloudOriginator }),
 );
 
-// Landing page. We serve the HTML directly rather than pulling in
-// @hono/node-server's serveStatic — one file doesn't earn a static
-// middleware dependency.
-import { readFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const landingPath = join(__dirname, "..", "public", "index.html");
-let landingHtml: string | null = null;
-root.get("/", async (c) => {
-  if (!landingHtml) {
-    try {
-      landingHtml = await readFile(landingPath, "utf8");
-    } catch {
-      // Fall back to the relay's JSON status if the landing file is
-      // missing (e.g., a stripped-down container build).
-      return c.json({ ok: true, service: "authai-cloud-relay" });
-    }
-  }
-  return c.html(landingHtml);
-});
+// Anyone hitting the relay's apex gets pointed at the webapp. Saves us
+// from having to host any UI on the relay process.
+root.get("/", (c) => c.redirect(webAppUrl, 302));
 
 root.route("/", relayApp);
-root.route("/admin", adminRoutes);
 
 startBackgroundSweep(store);
 
 serve({ fetch: root.fetch, port }, (info) => {
   console.log(
     `[cloud-relay-server] listening on http://localhost:${info.port} ` +
-      `(edition=cloud, daily_cap=${dailyRequestCap})`,
+      `(edition=cloud, daily_cap=${dailyRequestCap}, webapp=${webAppUrl})`,
   );
 });
