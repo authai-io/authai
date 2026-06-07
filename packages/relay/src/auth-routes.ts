@@ -176,22 +176,36 @@ export function createAuthRoutes(deps: {
     }
   });
 
+  /**
+   * POST /auth/revoke
+   *
+   * Deletes the auth record bound to the bearer JWT. All failure modes
+   * collapse to the same uniform 401 body — matching the /v1/* and
+   * /auth/whoami contract — so a caller can't distinguish "no token" from
+   * "wrong tenant" from "record already revoked" by probing.
+   *
+   * Cross-tenant guards (both checked):
+   *   - the JWT's `app` claim must match the resolved tenant's appId
+   *   - the stored record's `appId` column must match too (defense in
+   *     depth against a forged JWT whose claim is right but whose rid
+   *     points at a different tenant's row)
+   */
   app.post("/revoke", async (c) => {
     const tenant = c.get("tenant");
+    const fail = () => c.json({ error: "unauthorized" }, 401);
     const auth = c.req.header("Authorization") || "";
     const match = auth.match(/^Bearer\s+(.+)$/i);
-    if (!match) return c.json({ error: "missing bearer token" }, 401);
+    if (!match) return fail();
     try {
       const verified = await verifySessionJwt(match[1]!, deps.jwtSecret);
-      // Cross-tenant revoke guard: a JWT minted for App A cannot revoke
-      // a record bound to App B even if the caller knows the rid.
-      if ((verified.appId ?? undefined) !== tenant.appId) {
-        return c.json({ error: "unauthorized" }, 401);
-      }
+      if ((verified.appId ?? undefined) !== tenant.appId) return fail();
+      const record = await deps.store.get(verified.recordId);
+      if (!record) return fail();
+      if ((record.appId ?? undefined) !== tenant.appId) return fail();
       await deps.store.delete(verified.recordId);
       return c.body(null, 204);
-    } catch (err) {
-      return c.json({ error: errorMessage(err) }, 401);
+    } catch {
+      return fail();
     }
   });
 

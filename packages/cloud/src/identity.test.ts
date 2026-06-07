@@ -4,6 +4,7 @@ import {
   hashApiKey,
   generateApiKey,
   generateVerifyToken,
+  normalizeOrigin,
 } from "./identity.js";
 
 describe("identity", () => {
@@ -58,5 +59,61 @@ describe("identity", () => {
   it("generateApiKey + generateVerifyToken produce distinct outputs per call", () => {
     expect(generateApiKey()).not.toBe(generateApiKey());
     expect(generateVerifyToken()).not.toBe(generateVerifyToken());
+  });
+});
+
+describe("normalizeOrigin", () => {
+  it("strips trailing slash", () => {
+    expect(normalizeOrigin("https://example.com/")).toBe("https://example.com");
+  });
+
+  it("preserves origins without trailing slash unchanged", () => {
+    expect(normalizeOrigin("https://example.com")).toBe("https://example.com");
+  });
+
+  it("lowercases the host", () => {
+    expect(normalizeOrigin("HTTPS://Example.COM")).toBe("https://example.com");
+  });
+
+  it("elides default ports", () => {
+    expect(normalizeOrigin("https://example.com:443/")).toBe("https://example.com");
+    expect(normalizeOrigin("http://example.com:80")).toBe("http://example.com");
+  });
+
+  it("preserves non-default ports", () => {
+    expect(normalizeOrigin("http://localhost:3000")).toBe("http://localhost:3000");
+    expect(normalizeOrigin("https://api.example.com:8443/")).toBe(
+      "https://api.example.com:8443",
+    );
+  });
+
+  it("rejects URLs with a path beyond /", () => {
+    expect(normalizeOrigin("https://example.com/x")).toBe(null);
+    expect(normalizeOrigin("https://example.com/path/to/thing")).toBe(null);
+  });
+
+  it("rejects URLs with a query or fragment", () => {
+    expect(normalizeOrigin("https://example.com/?x=1")).toBe(null);
+    expect(normalizeOrigin("https://example.com/#frag")).toBe(null);
+  });
+
+  it("rejects non-http(s) schemes", () => {
+    expect(normalizeOrigin("ftp://example.com")).toBe(null);
+    expect(normalizeOrigin("javascript:alert(1)")).toBe(null);
+    expect(normalizeOrigin("file:///etc/passwd")).toBe(null);
+  });
+
+  it("rejects malformed input", () => {
+    expect(normalizeOrigin("not a url")).toBe(null);
+    expect(normalizeOrigin("")).toBe(null);
+    expect(normalizeOrigin("//example.com")).toBe(null);
+  });
+
+  it("produces the SAME value for a registration string and the browser Origin header", () => {
+    // The contract that matters in production: a builder pastes
+    // "https://myapp.com/" into the dashboard, the browser's Origin
+    // header on subsequent /auth/start is "https://myapp.com", both
+    // normalize identically.
+    expect(normalizeOrigin("https://myapp.com/")).toBe(normalizeOrigin("https://myapp.com"));
   });
 });

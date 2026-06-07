@@ -55,11 +55,47 @@ export function generateApiKey(): string {
 }
 
 /**
- * Generate the DNS TXT verification token for an app. Stored on the apps
- * row at creation; the builder publishes a TXT record `authai-verify=<token>`
- * on their origin to prove control before unverified-bucket rate limits
- * lift.
+ * Generate the DNS TXT verification token for an app. Used by v2's
+ * consent-dialog verification flow. v1 doesn't call this — every app's
+ * `originVerifyToken` column is empty. Kept exported for the v2 PR.
  */
 export function generateVerifyToken(): string {
   return randomBytes(16).toString("hex");
+}
+
+/**
+ * Normalize a user-supplied origin string to its canonical form: scheme
+ * + host (+ explicit non-default port). Returns `null` if the input is
+ * not a valid http(s) URL.
+ *
+ *   normalizeOrigin("https://example.com/")     → "https://example.com"
+ *   normalizeOrigin("HTTPS://Example.com")      → "https://example.com"
+ *   normalizeOrigin("https://example.com:443/") → "https://example.com"
+ *   normalizeOrigin("http://localhost:3000/x")  → null  (path present)
+ *   normalizeOrigin("ftp://example.com")        → null  (wrong scheme)
+ *
+ * This is the single source of truth for origin shape across the cloud
+ * edition: the webapp uses it at registration time and the
+ * CloudTenantResolver uses it on every request lookup, so a builder
+ * pasting `https://example.com/` and a browser sending
+ * `Origin: https://example.com` resolve to the same row.
+ */
+export function normalizeOrigin(input: string): string | null {
+  if (!input) return null;
+  let url: URL;
+  try {
+    url = new URL(input);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+  // Reject inputs that include a path beyond `/`, a query, or a fragment.
+  // A real origin is scheme + host + optional port, full stop.
+  if (url.pathname !== "/" && url.pathname !== "") return null;
+  if (url.search !== "") return null;
+  if (url.hash !== "") return null;
+  // `URL#origin` already lowercases the host and elides default ports
+  // (80 for http, 443 for https). That's exactly the shape browsers
+  // send in the Origin header.
+  return url.origin;
 }

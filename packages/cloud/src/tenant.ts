@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import type { TenantResolver, Tenant } from "@authai/relay";
 import type { AppStore } from "@authai/relay-store-postgres";
-import { derivePerAppIdentitySecret, hashApiKey } from "./identity.js";
+import { derivePerAppIdentitySecret, hashApiKey, normalizeOrigin } from "./identity.js";
 
 export type CloudTenantConfig = {
   /**
@@ -98,7 +98,14 @@ export class CloudTenantResolver implements TenantResolver {
     // Preference 2: Origin header lookup. Browser sign-in flows arrive at
     // /auth/start with an Origin set by the browser. The relay matches
     // it to apps.origin (registered at app creation time).
-    const origin = c.req.header("origin");
+    //
+    // Normalize before lookup so a builder who registered
+    // "https://example.com/" and a browser sending the standard
+    // `Origin: https://example.com` (no trailing slash, no path) hit the
+    // same row. Without this, every builder who pasted a URL with a
+    // trailing slash gets a silent tenant-resolution miss.
+    const rawOrigin = c.req.header("origin");
+    const origin = rawOrigin ? normalizeOrigin(rawOrigin) : null;
     if (origin) {
       const cacheKey = `o:${origin}`;
       const cached = cache?.get(cacheKey);

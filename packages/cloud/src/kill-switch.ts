@@ -11,18 +11,33 @@
  *     cloud relay. The real backstop is the operator responding to the
  *     alert webhook.
  *
- *   - States (the three the eng review collapsed to):
+ *   - Two states:
  *       healthy       — normal traffic
  *       paused-new    — existing JWTs still work, /auth/start returns 503
- *       read-only     — /v1/* blocked with structured 503, /auth/whoami
- *                       and /auth/revoke continue
  *
- *   - Re-enable: an OPERATOR_SECRET-gated CLI sets state back to healthy.
- *     Deliberately NOT exposed via the admin API so a leaked admin JWT
- *     cannot bypass the cap.
+ *     The state transitions to `paused-new` AUTOMATICALLY when the daily
+ *     request counter crosses the configured threshold. There is no
+ *     code path to transition manually from inside the relay process.
+ *
+ *   - Manual recovery (operator-driven) is intentionally OUT OF BAND:
+ *     when the operator wants to clear `paused-new` before midnight UTC
+ *     (when the daily key naturally expires), they SSH or `flyctl ssh`
+ *     into the relay's environment and run:
+ *
+ *         redis-cli del authai:cloud:kill-switch:state
+ *         redis-cli del authai:cloud:kill-switch:daily:YYYY-MM-DD
+ *
+ *     The relay re-reads `healthy` within the 5s state cache. This
+ *     deliberately keeps the kill switch unaffected by the admin /
+ *     dashboard surface — a leaked admin JWT cannot bypass the cap.
+ *
+ *     A previous version of this module exposed a `setState()` method
+ *     gated by an `OPERATOR_SECRET` env var, but the secret was never
+ *     wired into any caller, so the method was unreachable in practice.
+ *     It was removed; `redis-cli` is the documented operator path now.
  */
 
-export type KillSwitchState = "healthy" | "paused-new" | "read-only";
+export type KillSwitchState = "healthy" | "paused-new";
 
 export interface RedisLike {
   /** Atomic increment by `by`, returning the new value. */
@@ -74,8 +89,6 @@ export interface KillSwitch {
    * the request immediately if needed.
    */
   recordRequest(): Promise<KillSwitchState>;
-  /** Operator-driven override. Caller must have already proven OPERATOR_SECRET. */
-  setState(state: KillSwitchState, reason: string): Promise<void>;
 }
 
 const STATE_KEY = "authai:cloud:kill-switch:state";
@@ -153,28 +166,11 @@ export function createKillSwitch(config: KillSwitchConfig): KillSwitch {
       }
       return next;
     },
-
-    async setState(state, reason) {
-      const previous = await readState();
-      try {
-        await config.redis.set(STATE_KEY, state);
-      } catch (err) {
-        emit({ type: "redis_unreachable", error: (err as Error).message });
-        throw new Error("cannot persist state: redis unreachable");
-      }
-      stateCache = { value: state, expiresAt: Date.now() + 5_000 };
-      emit({
-        type: "state_transition",
-        from: previous,
-        to: state,
-        reason: `operator override: ${reason}`,
-      });
-    },
   };
 }
 
 function parseState(raw: string | null): KillSwitchState | null {
-  if (raw === "healthy" || raw === "paused-new" || raw === "read-only") return raw;
+  if (raw === "healthy" || raw === "paused-new") return raw;
   return null;
 }
 

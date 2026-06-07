@@ -60,30 +60,14 @@ export default async function AppDetailPage({
 
         <h2>Origin</h2>
         <p>
-          <code>{app.origin}</code>{" "}
-          {app.originVerified ? (
-            <span style={{ color: "var(--accent)" }}>verified</span>
-          ) : (
-            <span className="muted">pending DNS verification</span>
-          )}
+          <code>{app.origin}</code>
         </p>
-
-        {!app.originVerified && (
-          <>
-            <h3>DNS TXT record needed</h3>
-            <pre>
-              <code>
-                Host:  {hostnameFor(app.origin)}{"\n"}
-                Type:  TXT{"\n"}
-                Value: authai-verify={app.originVerifyToken}
-              </code>
-            </pre>
-            <p className="field-hint">
-              The relay polls DNS once per minute. Until verified, this app
-              is capped at {app.dailyRequestCap} requests/day.
-            </p>
-          </>
-        )}
+        <p className="field-hint">
+          The browser must send this exact value in the
+          <code> Origin </code> header when calling{" "}
+          <code>/auth/start</code>. Builders typically don't need to think
+          about this — the React SDK sets it automatically.
+        </p>
 
         <h2>Limits</h2>
         <table>
@@ -144,10 +128,3 @@ export default async function AppDetailPage({
   );
 }
 
-function hostnameFor(origin: string): string {
-  try {
-    return new URL(origin).hostname;
-  } catch {
-    return origin;
-  }
-}

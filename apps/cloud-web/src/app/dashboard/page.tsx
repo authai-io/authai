@@ -49,7 +49,6 @@ export default async function Dashboard() {
               <tr>
                 <th>Name</th>
                 <th>Origin</th>
-                <th>Status</th>
                 <th></th>
               </tr>
             </thead>
@@ -62,13 +61,6 @@ export default async function Dashboard() {
                   </td>
                   <td>
                     <code>{a.origin}</code>
-                  </td>
-                  <td>
-                    {a.originVerified ? (
-                      <span style={{ color: "var(--accent)" }}>verified</span>
-                    ) : (
-                      <span className="muted">pending DNS</span>
-                    )}
                   </td>
                   <td style={{ textAlign: "right" }}>
                     <Link href={`/apps/${a.id}`}>manage</Link>

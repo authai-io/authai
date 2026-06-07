@@ -27,14 +27,18 @@ export {
   hashApiKey,
   generateApiKey,
   generateVerifyToken,
+  normalizeOrigin,
 } from "./identity.js";
 
-export {
-  verifyOriginByDns,
-  createOriginVerifier,
-  isAutoAllowedOrigin,
-} from "./origin-verify.js";
-export type { OriginVerifier, OriginVerifierConfig } from "./origin-verify.js";
+// DNS TXT origin verification (packages/cloud/src/origin-verify.ts) is NOT
+// exported in v1. The v1 cloud edition treats every registered origin as
+// usable — the upstream provider's consent screen identifies "AuthAI Cloud"
+// generically and not the builder's origin, so origin spoofing doesn't
+// confuse end users in v1. v2's consent dialog (per-app budget caps shown
+// to the end user) reactivates the verification gate; until then the
+// file stays in the package but unwired. Existing consumers should rely
+// on per-app rate limits + the global cost-cap kill switch for abuse
+// mitigation.
 
 export {
   createKillSwitch,

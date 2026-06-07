@@ -120,7 +120,11 @@ const relayApp = createRelayApp({
   jwtSecret,
   tenantResolver,
   middleware: [
-    // Kill switch sees every request before the tenant resolver.
+    // Kill switch sees every request before the tenant resolver. Only
+    // `paused-new` is reachable in v1 — and it intentionally only blocks
+    // new sign-ins, leaving in-flight users (existing JWTs against /v1/*)
+    // working. See packages/cloud/src/kill-switch.ts for the recovery
+    // procedure when the daily counter trips early.
     async (c, next) => {
       const state = await killSwitch.currentState();
       if (state === "paused-new" && c.req.path.startsWith("/auth/start")) {
@@ -128,17 +132,6 @@ const relayApp = createRelayApp({
           {
             error: "AuthAI Cloud is temporarily paused for new sign-ins. " +
               "Try again later.",
-          },
-          503,
-        );
-      }
-      if (state === "read-only" && c.req.path.startsWith("/v1/")) {
-        return c.json(
-          {
-            error: {
-              message: "AuthAI Cloud is temporarily read-only.",
-              type: "service_unavailable",
-            },
           },
           503,
         );

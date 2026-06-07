@@ -3,8 +3,9 @@ import { redirect } from "next/navigation";
 import { ulid } from "ulid";
 import { getSession } from "@/lib/session";
 import { getStore } from "@/lib/db";
-import { generateApiKey, generateVerifyToken, hashApiKey, isAutoAllowedOrigin } from "@authai/cloud";
+import { generateApiKey, hashApiKey, normalizeOrigin } from "@authai/cloud";
 import { CLI_BRIDGE_COOKIE, verifyBridge } from "@/lib/cli-bridge";
+import { setOneTimeKey } from "@/lib/one-time-key";
 import { cookies } from "next/headers";
 
 export default async function NewAppPage({
@@ -24,14 +25,15 @@ export default async function NewAppPage({
     if (!session) redirect("/sign-in?return=/apps/new");
 
     const name = String(formData.get("name") ?? "").trim();
-    const origin = String(formData.get("origin") ?? "").trim();
+    const rawOrigin = String(formData.get("origin") ?? "").trim();
     const cliMode = String(formData.get("cli") ?? "") === "1";
 
     if (!name || name.length > 80) {
       throw new Error("name must be 1-80 chars");
     }
-    if (!isValidOrigin(origin)) {
-      throw new Error("origin must be a full http(s) URL");
+    const origin = normalizeOrigin(rawOrigin);
+    if (!origin) {
+      throw new Error("origin must be a valid http(s) URL");
     }
 
     const store = await getStore();
@@ -43,23 +45,35 @@ export default async function NewAppPage({
     const id = `app_${ulid()}`;
     const apiKey = generateApiKey();
     const apiKeyHash = hashApiKey(apiKey);
-    const verifyToken = generateVerifyToken();
-    const autoVerified = isAutoAllowedOrigin(origin);
     const now = Date.now();
 
-    await store.apps.create({
-      id,
-      apiKeyHash,
-      origin,
-      name,
-      ownerGithubId: session.githubUserId,
-      ownerEmail: session.githubEmail,
-      originVerified: autoVerified,
-      originVerifiedAt: autoVerified ? now : undefined,
-      originVerifyToken: verifyToken,
-      rateLimitPerMin: 60,
-      dailyRequestCap: autoVerified ? 1000 : 100,
-    });
+    // v1 doesn't enforce DNS verification. Every app is treated as usable
+    // regardless of origin. v2 introduces the consent dialog + per-app
+    // budgets, at which point originVerified actually gates trust — until
+    // then this field is dead weight that's set true so the dashboard
+    // doesn't show a "pending DNS" UI that has no path forward.
+    try {
+      await store.apps.create({
+        id,
+        apiKeyHash,
+        origin,
+        name,
+        ownerGithubId: session.githubUserId,
+        ownerEmail: session.githubEmail,
+        originVerified: true,
+        originVerifiedAt: now,
+        originVerifyToken: "",
+        rateLimitPerMin: 60,
+        dailyRequestCap: 1000,
+      });
+    } catch (err) {
+      // Raced another tab — the unique index on apps.origin caught it.
+      // Surface the same friendly message as the pre-check.
+      if (isPostgresUniqueViolation(err)) {
+        throw new Error("origin already in use by another app");
+      }
+      throw err;
+    }
 
     await store.audit.write({
       id: ulid(),
@@ -71,30 +85,29 @@ export default async function NewAppPage({
       payload: {
         owner_github_login: session.githubLogin,
         origin,
-        auto_verified: autoVerified,
         via: cliMode ? "cli" : "web",
       },
     });
 
-    // CLI flow: send the key back to the local listener via 302.
+    // Pass the API key through an HttpOnly one-time cookie instead of a
+    // URL query string. The /created page reads + deletes the cookie,
+    // renders either a code block (web flow) or an auto-submitting POST
+    // form (CLI flow). Neither path puts the key into browser history,
+    // server access logs, or screenshot-shareable URLs.
+    await setOneTimeKey(apiKey);
+
     if (cliMode) {
       const c = await cookies();
       const bridge = await verifyBridge(c.get(CLI_BRIDGE_COOKIE)?.value);
+      c.delete(CLI_BRIDGE_COOKIE);
       if (bridge) {
-        const callbackUrl = new URL(`http://127.0.0.1:${bridge.port}/callback`);
-        callbackUrl.searchParams.set("key", apiKey);
-        callbackUrl.searchParams.set("app_id", id);
-        callbackUrl.searchParams.set("state", bridge.state);
-        if (!autoVerified) callbackUrl.searchParams.set("verify_token", verifyToken);
-        c.delete(CLI_BRIDGE_COOKIE);
-        // Show the key once on a confirmation page that auto-redirects to the
-        // CLI's localhost listener. If the listener is gone the user still
-        // sees the key here.
-        redirect(`/apps/${id}/created?cli=1&cb=${encodeURIComponent(callbackUrl.toString())}&key=${encodeURIComponent(apiKey)}`);
+        redirect(
+          `/apps/${id}/created?cli=1&port=${bridge.port}&state=${encodeURIComponent(bridge.state)}`,
+        );
       }
     }
 
-    redirect(`/apps/${id}/created?key=${encodeURIComponent(apiKey)}`);
+    redirect(`/apps/${id}/created`);
   }
 
   return (
@@ -157,12 +170,12 @@ export default async function NewAppPage({
   );
 }
 
-function isValidOrigin(origin: string): boolean {
-  try {
-    const url = new URL(origin);
-    if (url.protocol !== "http:" && url.protocol !== "https:") return false;
-    return url.pathname === "/" && url.search === "" && url.hash === "";
-  } catch {
-    return false;
-  }
+function isPostgresUniqueViolation(err: unknown): boolean {
+  // pg surfaces SQLSTATE on the error object as `.code`. 23505 = unique violation.
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code: string }).code === "23505"
+  );
 }

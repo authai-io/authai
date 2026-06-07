@@ -241,7 +241,7 @@ created_at, updated_at
 | HKDF per-app identity derivation      | `@authai/cloud`                | `identity.ts`                 |
 | Kill switch + rate limiter            | `@authai/cloud`                | `kill-switch.ts`              |
 | DNS TXT origin verification           | `@authai/cloud`                | `origin-verify.ts`            |
-| `npx authai-cloud init` CLI           | `@authai/cli`                  | `bin.ts`, `init.ts`           |
+| `npx authai-cloud init` CLI           | `authai-cloud` (unscoped npm pkg, `packages/cli` in workspace) | `bin.ts`, `init.ts` |
 | Self-hosted boot                      | `apps/relay-server`            | `index.ts`                    |
 | Cloud relay boot                      | `apps/cloud-relay-server`      | `index.ts`                    |
 | Cloud webapp (landing/dashboard/docs/CLI bridge) | `apps/cloud-web`    | `src/app/`                    |
