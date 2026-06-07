@@ -51,9 +51,18 @@ importers:
       '@authai/relay-store-postgres':
         specifier: workspace:*
         version: link:../../packages/relay-store-postgres
+      highlight.js:
+        specifier: ^11.10.0
+        version: 11.11.1
       jose:
         specifier: ^5.9.6
         version: 5.10.0
+      marked:
+        specifier: ^14.1.3
+        version: 14.1.4
+      marked-highlight:
+        specifier: ^2.2.1
+        version: 2.2.4(marked@14.1.4)
       next:
         specifier: ^15.0.3
         version: 15.5.19(react-dom@18.3.1(react@18.3.1))(react@18.3.1)

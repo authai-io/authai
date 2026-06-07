@@ -1,79 +1,125 @@
-import Link from "next/link";
+"use client";
 
+import Link from "next/link";
+import { CodePreview } from "./code-preview";
+import { ThemeRoot, SunIcon, MoonIcon } from "./theme-toggle";
+
+const GITHUB_URL = "https://github.com/riccardoio/authai";
+
+/**
+ * Landing page for authai.io. Adapted from apps/example-react/src/App.tsx's
+ * Landing — same hero shape, same CTAs visually, but rewired for the
+ * webapp context:
+ *
+ *   - "Try it" / multi-provider SignIn buttons (which signed END USERS
+ *     into ChatGPT in the demo) are replaced with "Sign in with GitHub"
+ *     pointing at /sign-in. The audience here is BUILDERS signing in to
+ *     register an app; end-user ChatGPT sign-in happens later inside
+ *     each builder's own app via @authai/react's SignIn widget.
+ *   - Hash-routing (#/docs/...) becomes Next.js <Link href="/docs/...">.
+ *   - The GitHub link points at the real repo, not a placeholder.
+ *
+ * Client component because the theme toggle needs localStorage. Could
+ * be split into a server-rendered shell with a small client island just
+ * for the toggle, but the whole page is small enough that the cost is
+ * negligible and a single client component keeps the code linear.
+ */
 export default function HomePage() {
   return (
-    <main>
-      <h1>AuthAI Cloud</h1>
-      <p className="muted">
-        Sign in with ChatGPT (and Copilot, and xAI) for your app — your users
-        pay for AI through their own subscription, you don't pay per token.
-      </p>
+    <ThemeRoot>
+      {({ mode, toggle }) => (
+        <div className="landing" data-theme={mode}>
+          <header className="landing-topbar">
+            <Link href="/" className="landing-brand" style={{ textDecoration: "none" }}>
+              <span className="landing-brand-mark">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2 L22 20 L2 20 Z" />
+                </svg>
+              </span>
+              AuthAI
+            </Link>
+            <nav className="landing-nav">
+              <a href={GITHUB_URL} target="_blank" rel="noreferrer">
+                <GithubIcon />
+                GitHub
+              </a>
+              <Link href="/docs/introduction">Docs</Link>
+              <Link href="/docs/security">Security</Link>
+              <button
+                type="button"
+                className="landing-theme-toggle"
+                onClick={toggle}
+                aria-label={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                title={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {mode === "dark" ? <SunIcon /> : <MoonIcon />}
+              </button>
+            </nav>
+          </header>
 
-      <h2>Set up in 30 seconds</h2>
-      <pre><code>npx authai-cloud init</code></pre>
-      <p>
-        Opens this site to sign in with GitHub, prompts for an app name and
-        origin, then writes <code>AUTH_AI_SECRET</code> to your <code>.env</code>.
-      </p>
+          <main className="landing-hero">
+            <div className="landing-hero-text">
+              <span className="landing-eyebrow">
+                <span className="dot" />
+                Auth for AI builders
+              </span>
 
-      <p>
-        Or do it manually:{" "}
-        <Link href="/sign-in">sign in with GitHub</Link>, create an app, copy
-        the key into your project.
-      </p>
+              <h1 className="landing-headline">
+                Build AI products <em>without the AI bill.</em>
+              </h1>
 
-      <h2>How it works</h2>
-      <p>
-        Your end user signs in once with their ChatGPT (or Copilot, or xAI)
-        subscription. Your app calls models on their behalf via the standard
-        <code> openai</code> SDK, pointed at the relay. The cost stays on their
-        plan.
-      </p>
+              <p className="landing-sub">
+                Your users sign in with their AI subscription.{" "}
+                <code className="landing-chip">authai.js</code> wires it into your app
+                in two lines. Every model call lands on their plan — across ChatGPT,
+                Grok, and Copilot.
+              </p>
 
-      <h2>What's stored where</h2>
-      <p>
-        The relay encrypts every user's OAuth tokens with a fresh AES-256 key
-        per record. That key is embedded in the user's session JWT — it's
-        never persisted server-side. Even an operator with full database
-        access can't decrypt stored tokens without the user's JWT.
-      </p>
-      <p>
-        The same code is open-source and self-hostable. If you don't want a
-        cloud dependency, run it yourself.{" "}
-        <a href="https://github.com/riccardoio/authai">
-          github.com/riccardoio/authai
-        </a>
-      </p>
+              <div className="landing-cta">
+                <a className="landing-btn-ghost" href={GITHUB_URL} target="_blank" rel="noreferrer">
+                  <GithubIcon />
+                  View on GitHub
+                </a>
+                <Link href="/sign-in" className="landing-btn-primary">
+                  Sign in with GitHub
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                </Link>
+              </div>
 
-      <h2>Docs</h2>
-      <ul>
-        <li>
-          <Link href="/docs">How AuthAI works under the hood</Link>
-        </li>
-        <li>
-          <a href="https://github.com/riccardoio/authai/blob/main/README.md">
-            README on GitHub
-          </a>
-        </li>
-        <li>
-          <a href="https://github.com/riccardoio/authai/blob/main/docs/security.md">
-            Security model
-          </a>
-        </li>
-      </ul>
+              <div className="landing-preset">
+                <span>Or get started in one command</span>
+                <div className="landing-preset-row">
+                  <code style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 13,
+                    padding: "8px 14px",
+                    borderRadius: 999,
+                    border: "1px solid var(--border-strong)",
+                  }}>npx authai-cloud init</code>
+                </div>
+              </div>
+            </div>
 
-      <hr />
-      <p className="muted">
-        Experimental. Free, rate-limited. Not affiliated with OpenAI. AuthAI
-        Cloud relies on the public Codex CLI OAuth client to authenticate
-        with ChatGPT's backend, so model availability tracks the Codex catalog.
-      </p>
+            <CodePreview />
+          </main>
 
-      <footer>
-        <a href="https://github.com/riccardoio/authai">source</a>
-        &nbsp;·&nbsp; <Link href="/sign-in">sign in</Link>
-        &nbsp;·&nbsp; <Link href="/docs">docs</Link>
-      </footer>
-    </main>
+          <footer className="landing-footer">
+            Self-hostable · OSS · Built on the Geist of the web
+          </footer>
+        </div>
+      )}
+    </ThemeRoot>
+  );
+}
+
+function GithubIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.4 3-.405 1.02.005 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+    </svg>
   );
 }
