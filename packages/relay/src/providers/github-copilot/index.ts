@@ -92,16 +92,22 @@ async function resolveCopilotToken(githubToken: string): Promise<CachedCopilotTo
 }
 
 async function fetchGithubUserId(token: string): Promise<string> {
-  try {
-    const res = await fetch("https://api.github.com/user", {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-    });
-    if (!res.ok) return "";
-    const json: any = await res.json();
-    return String(json?.id ?? json?.login ?? "");
-  } catch {
-    return "";
+  // We require a real, non-empty user id so two anonymous sign-ins cannot
+  // share an identityId. Returning "" here would let `auth-routes.ts` /poll
+  // collapse multiple users into a single record. Treat any failure as fatal.
+  const res = await fetch("https://api.github.com/user", {
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`GitHub /user lookup failed: ${res.status} ${text}`);
   }
+  const json: any = await res.json();
+  const id = json?.id ?? json?.login;
+  if (id === undefined || id === null || String(id).length === 0) {
+    throw new Error("GitHub /user lookup returned no usable id");
+  }
+  return String(id);
 }
 
 export function createGitHubCopilotAdapter(): ProviderAdapter {

@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { stream } from "hono/streaming";
 import { verifySessionJwt } from "./jwt.js";
 import { getProvider } from "./providers/registry.js";
@@ -6,29 +6,43 @@ import type { ProviderId } from "./providers/types.js";
 import { loadAndMaybeRefresh } from "./refresh.js";
 import type { AuthRecordStore } from "./store.js";
 
+type V1Variables = {
+  Variables: {
+    recordId: string;
+    recordKey: Buffer;
+    provider: ProviderId;
+  };
+};
+
+type V1Context = Context<V1Variables>;
+
 export function createV1Routes(deps: {
   store: AuthRecordStore;
   jwtSecret: Uint8Array;
-}): Hono {
-  const app = new Hono();
+}): Hono<V1Variables> {
+  const app = new Hono<V1Variables>();
 
+  // Uniform 401 for every authentication failure mode (missing header,
+  // malformed JWT, bad signature, expired, wrong version, wrong key length).
+  // Detail is kept in server-side logs only — we never let callers
+  // distinguish failure modes against /v1/* either, matching the
+  // /auth/whoami contract.
   app.use("*", async (c, next) => {
     if (c.req.method === "OPTIONS") return next();
     const auth = c.req.header("Authorization") || "";
     const match = auth.match(/^Bearer\s+(.+)$/i);
-    if (!match) return openaiError(c, 401, "missing bearer token", "invalid_request_error");
+    if (!match) return unauthorized(c);
     try {
       const verified = await verifySessionJwt(match[1]!, deps.jwtSecret);
       c.set("recordId", verified.recordId);
       c.set("recordKey", verified.recordKey);
       c.set("provider", verified.provider);
     } catch (err) {
-      return openaiError(
-        c,
-        401,
-        `invalid token: ${(err as Error).message}`,
-        "invalid_request_error",
+      console.warn(
+        "[v1] jwt verification failed:",
+        err instanceof Error ? err.message : String(err),
       );
+      return unauthorized(c);
     }
     return next();
   });
@@ -163,17 +177,19 @@ export function createV1Routes(deps: {
 }
 
 async function resolveCredentials(
-  c: any,
+  c: V1Context,
   store: AuthRecordStore,
 ): Promise<
   { provider: ProviderId; access: string; accountId: string } | { error: Response }
 > {
-  const recordId = c.get("recordId") as string;
-  const recordKey = c.get("recordKey") as Buffer;
-  const provider = c.get("provider") as ProviderId;
+  const recordId = c.get("recordId");
+  const recordKey = c.get("recordKey");
+  const provider = c.get("provider");
   const record = await store.get(recordId);
   if (!record) {
-    return { error: openaiError(c, 401, "session not found or revoked", "invalid_request_error") };
+    // Revoked or never existed — surface as the same generic 401.
+    console.warn("[v1] record missing for verified jwt:", recordId);
+    return { error: unauthorized(c) };
   }
   try {
     const decrypted = await loadAndMaybeRefresh({
@@ -184,19 +200,20 @@ async function resolveCredentials(
     });
     return { provider: decrypted.provider, access: decrypted.access, accountId: decrypted.accountId };
   } catch (err) {
-    return {
-      error: openaiError(
-        c,
-        401,
-        `cannot resolve session: ${(err as Error).message}`,
-        "invalid_request_error",
-      ),
-    };
+    console.warn(
+      "[v1] cannot resolve session:",
+      err instanceof Error ? err.message : String(err),
+    );
+    return { error: unauthorized(c) };
   }
 }
 
-function openaiError(c: any, status: number, message: string, type: string): Response {
-  return c.json({ error: { message, type } }, status);
+function unauthorized(c: V1Context): Response {
+  return openaiError(c, 401, "unauthorized", "invalid_request_error");
+}
+
+function openaiError(c: V1Context, status: number, message: string, type: string): Response {
+  return c.json({ error: { message, type } }, status as 401);
 }
 
 function safeJsonParse(text: string | undefined): unknown {

@@ -24,8 +24,8 @@ export function Step1({
     ? <>Connect {providerName} to <span className="authai-strong">{appName}</span></>
     : <>Connect an AI subscription to <span className="authai-strong">{appName}</span></>;
   const body = providerName
-    ? `Sign in once. ${appName} will use your ${providerName} subscription to run AI features — billed to your existing plan, never to a card you give ${appName}.`
-    : `Sign in once. ${appName} will use your subscription to run AI features — billed to your existing plan, never to a card you give ${appName}.`;
+    ? `Sign in once. ${appName} will use your ${providerName} subscription to run AI features.`
+    : `Sign in once. ${appName} will use your subscription to run AI features.`;
   const continueLabel = ready ? (presetProvider ? "Continue" : "Choose provider") : "Preparing…";
 
   return (

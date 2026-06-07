@@ -71,8 +71,15 @@ export function createAuthRoutes(deps: {
         return c.json({ status: "pending" });
       }
       const tokens = result.tokens;
-      const stableAccountInput = tokens.accountId || tokens.access.slice(0, 32);
-      const accountIdHash = identityId(deps.identitySecret, session.providerId, stableAccountInput);
+      // Reject any provider response that didn't yield a real, non-empty
+      // accountId. Without one we'd compute the same identityId for every
+      // user under this provider (HMAC of provider || \0 || "") and the
+      // dedup query in `findByAccountHash` would collapse them into a
+      // single shared record. Adapters must fail their own lookup loudly.
+      if (typeof tokens.accountId !== "string" || tokens.accountId.length === 0) {
+        throw new Error(`provider ${session.providerId} did not return an accountId`);
+      }
+      const accountIdHash = identityId(deps.identitySecret, session.providerId, tokens.accountId);
       const existing = await deps.store.findByAccountHash(accountIdHash);
       const recordKey = generateRecordKey();
       const now = Date.now();

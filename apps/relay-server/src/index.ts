@@ -25,17 +25,22 @@ if (driver !== "sqlite") {
 
 const store = createSqliteStore(dbUrl);
 const jwtSecret = new Uint8Array(Buffer.from(jwtSecretHex, "hex"));
-if (jwtSecret.length < 32) {
-  console.error("AUTH_AI_JWT_SECRET must decode to at least 32 bytes (use `openssl rand -hex 32`).");
-  process.exit(1);
-}
 const identitySecret = Buffer.from(identitySecretHex, "hex");
-if (identitySecret.length < 32) {
-  console.error("AUTH_AI_IDENTITY_SECRET must decode to at least 32 bytes (use `openssl rand -hex 32`).");
+
+let app;
+try {
+  // createRelayApp does the real validation (length + differ-ness). We catch
+  // here to print an env-flavored message instead of a thrown library error.
+  app = createRelayApp({ store, jwtSecret, identitySecret, originator });
+} catch (err) {
+  console.error(
+    `[relay-server] invalid config: ${err instanceof Error ? err.message : String(err)}`,
+  );
+  console.error(
+    "Use `openssl rand -hex 32` to generate fresh AUTH_AI_JWT_SECRET / AUTH_AI_IDENTITY_SECRET.",
+  );
   process.exit(1);
 }
-
-const app = createRelayApp({ store, jwtSecret, identitySecret, originator });
 startBackgroundSweep(store);
 
 serve({ fetch: app.fetch, port }, (info) => {

@@ -29,7 +29,9 @@ const CSS = `
   width: 100%;
   max-width: 440px;
   margin: 16px;
-  box-shadow: 0 24px 48px -12px rgba(0,0,0,.25), 0 0 0 1px rgba(0,0,0,.02);
+  box-shadow:
+    0 24px 48px -12px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
 }
 .authai-overlay[data-state="open"] .authai-card { animation: authai-scale-in 260ms cubic-bezier(.16,1,.3,1) forwards; }
 .authai-overlay[data-state="closed"] .authai-card { animation: authai-scale-out 180ms ease forwards; }
@@ -64,18 +66,21 @@ const CSS = `
   letter-spacing: -0.01em;
   margin: 0;
   text-align: center;
+  color: var(--authai-foreground);
 }
 .authai-body {
   font-size: 14px;
   line-height: 1.55;
   color: var(--authai-foreground);
   margin: 0;
+  text-align: center;
 }
 .authai-muted {
   color: var(--authai-foreground-muted);
   font-size: 13px;
   line-height: 1.5;
   margin: 0;
+  text-align: center;
 }
 .authai-strong { font-weight: 600; }
 

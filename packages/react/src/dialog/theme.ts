@@ -41,13 +41,13 @@ const LIGHT: AuthAIColors = {
 };
 
 const DARK: AuthAIColors = {
-  overlay: "rgba(0, 0, 0, 0.7)",
-  surface: "#0a0a0a",
-  surfaceMuted: "#1c1c1f",
-  border: "#27272a",
-  foreground: "#fafafa",
+  overlay: "rgba(0, 0, 0, 0.72)",
+  surface: "#1a1a1a",
+  surfaceMuted: "#2a2a2a",
+  border: "#3a3a3a",
+  foreground: "#ffffff",
   foregroundMuted: "#a1a1aa",
-  primary: "#fafafa",
+  primary: "#ffffff",
   primaryForeground: "#0a0a0a",
   primaryHover: "#e4e4e7",
   accent: "#60a5fa",
