@@ -107,6 +107,40 @@ export default function HomePage() {
             <CodePreview />
           </main>
 
+          <section className="landing-flow" aria-labelledby="how-it-works">
+            <h2 id="how-it-works" className="landing-flow-heading">
+              How it works
+            </h2>
+            <ol className="landing-flow-steps">
+              <li className="landing-flow-step">
+                <span className="landing-flow-num">1</span>
+                <h3 className="landing-flow-step-title">Your user signs in</h3>
+                <p className="landing-flow-step-body">
+                  One button. ChatGPT, Grok, or Copilot — whichever subscription
+                  they already pay for. 30-second OAuth on the provider's site.
+                </p>
+              </li>
+              <li className="landing-flow-step">
+                <span className="landing-flow-num">2</span>
+                <h3 className="landing-flow-step-title">Your backend gets a JWT</h3>
+                <p className="landing-flow-step-body">
+                  Use it like an API key. The <code>openai</code> SDK keeps
+                  working — point <code>baseURL</code> at the relay and the
+                  rest of your code is unchanged.
+                </p>
+              </li>
+              <li className="landing-flow-step">
+                <span className="landing-flow-num">3</span>
+                <h3 className="landing-flow-step-title">Calls land on their plan</h3>
+                <p className="landing-flow-step-body">
+                  Every model call bills against the user's subscription, not
+                  yours. Tokens stay encrypted end-to-end; the relay holds
+                  ciphertext, never plaintext.
+                </p>
+              </li>
+            </ol>
+          </section>
+
           <footer className="landing-footer">
             Self-hostable · OSS · Built on the Geist of the web
           </footer>
