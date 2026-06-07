@@ -8,7 +8,7 @@ const GITHUB_URL = "https://github.com/riccardoio/authai";
 
 /**
  * Landing page for authai.io. Adapted from apps/example-react/src/App.tsx's
- * Landing — same hero shape, same CTAs visually, but rewired for the
+ * Landing - same hero shape, same CTAs visually, but rewired for the
  * webapp context:
  *
  *   - "Try it" / multi-provider SignIn buttons (which signed END USERS
@@ -138,7 +138,7 @@ export default function HomePage() {
                 <span className="landing-flow-num">1</span>
                 <h3 className="landing-flow-step-title">Your user signs in</h3>
                 <p className="landing-flow-step-body">
-                  One button. ChatGPT, Grok, or Copilot — whichever subscription
+                  One button. ChatGPT, Grok, or Copilot. Whichever subscription
                   they already pay for. 30-second OAuth on the provider's site.
                 </p>
               </li>
