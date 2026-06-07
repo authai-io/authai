@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { exchangeCodeForToken, fetchProfile } from "@/lib/github";
 import { createSession, SESSION_COOKIE } from "@/lib/session";
 import { OAUTH_STATE_COOKIE, RETURN_COOKIE } from "@/app/sign-in/route";
+import { absoluteUrl } from "@/lib/urls";
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
@@ -18,8 +19,29 @@ export async function GET(req: NextRequest) {
   const expectedState = req.cookies.get(OAUTH_STATE_COOKIE)?.value;
   const returnTo = req.cookies.get(RETURN_COOKIE)?.value;
 
+  // Diagnostic logging while we shake out the prod OAuth flow. Safe to
+  // log states (they're random nonces, not secrets) but never log the
+  // OAuth `code` (which IS used to exchange for an access token, once).
+  console.log(
+    JSON.stringify({
+      tag: "auth.callback",
+      hasCode: Boolean(code),
+      hasStateParam: Boolean(state),
+      stateParam: state,
+      hasStateCookie: Boolean(expectedState),
+      stateCookie: expectedState,
+      stateMatch: state === expectedState,
+      returnTo: returnTo ?? null,
+      cookieNames: req.cookies.getAll().map((c) => c.name),
+      reqUrl: req.url,
+      hostHeader: req.headers.get("host"),
+      xfHost: req.headers.get("x-forwarded-host"),
+      xfProto: req.headers.get("x-forwarded-proto"),
+    }),
+  );
+
   if (!code || !state || !expectedState || state !== expectedState) {
-    return NextResponse.redirect(new URL("/sign-in?error=state", req.url));
+    return NextResponse.redirect(absoluteUrl("/sign-in?error=state"));
   }
 
   let token: string;
@@ -29,7 +51,7 @@ export async function GET(req: NextRequest) {
     profile = await fetchProfile(token);
   } catch (err) {
     console.error("[cloud-web] github callback failed:", err);
-    return NextResponse.redirect(new URL("/sign-in?error=oauth", req.url));
+    return NextResponse.redirect(absoluteUrl("/sign-in?error=oauth"));
   }
 
   const session = await createSession({
@@ -39,7 +61,7 @@ export async function GET(req: NextRequest) {
   });
 
   const dest = returnTo && returnTo.startsWith("/") ? returnTo : "/dashboard";
-  const res = NextResponse.redirect(new URL(dest, req.url));
+  const res = NextResponse.redirect(absoluteUrl(dest));
   res.cookies.delete(OAUTH_STATE_COOKIE);
   res.cookies.delete(RETURN_COOKIE);
   res.cookies.set(SESSION_COOKIE, session, {

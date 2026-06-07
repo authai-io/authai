@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { CLI_BRIDGE_COOKIE, signBridge } from "@/lib/cli-bridge";
+import { absoluteUrl } from "@/lib/urls";
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
 
   const token = await signBridge({ port, state });
   const res = NextResponse.redirect(
-    new URL("/sign-in?return=/apps/new?cli=1", req.url),
+    absoluteUrl("/sign-in?return=/apps/new?cli=1"),
   );
   res.cookies.set(CLI_BRIDGE_COOKIE, token, {
     httpOnly: true,
