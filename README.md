@@ -140,15 +140,45 @@ Sending an unsupported model name (e.g. `gpt-4`) returns a 400 from the Codex ba
 | `AUTH_AI_DB_URL`        | `./relay.db`       | SQLite file path, or `postgres://...` (driver pending)                      |
 | `AUTH_AI_PORT`          | `3000`             |                                                                             |
 
+## Use AuthAI Cloud instead (skip the setup)
+
+If you don't want to run the relay yourself, the same code is hosted at `cloud.authai.dev` as a free service. One command from a fresh project:
+
+```bash
+npx authai-cloud init
+# → opens GitHub for sign-in, prompts for app name + origin,
+#   writes AUTH_AI_KEY=... to .env
+```
+
+Then in your backend:
+
+```ts
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: jwt,
+  baseURL: "https://cloud.authai.dev/v1",
+  defaultHeaders: { "x-authai-key": process.env.AUTH_AI_KEY! },
+});
+```
+
+Same encryption model as self-hosting. The cloud host runs the same code from this repo and stores only ciphertext — per-record AES keys still live exclusively in the user's JWT and never reach our servers in a decryptable form. See [docs/reference.md](./docs/reference.md) for the full architecture.
+
+AuthAI Cloud is experimental and rate-limited. Treat it as a free demo service.
+
 ## Repo layout
 
 ```
 packages/
 ├── relay                core: OAuth flow, JWT, AES-GCM, OpenAI-compat proxy
 ├── relay-store-sqlite   default SQLite storage driver
+├── relay-store-postgres Postgres driver (cloud edition uses this)
+├── cloud                cloud edition: tenant, admin API, kill switch, rate limits
+├── cli                  npx authai-cloud — one-command app registration
 └── react                <AuthAIProvider>, <SignInWithChatGPT>, useAuthAI()
 apps/
-├── relay-server         executable that boots the relay
+├── relay-server         executable that boots the community (self-hosted) relay
+├── cloud-relay-server   executable that boots the cloud edition
 ├── example-backend      tiny Node demo using the openai SDK against the relay
 └── example-react        Vite + React frontend demo
 ```

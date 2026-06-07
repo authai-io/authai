@@ -197,16 +197,41 @@ const adminRoutes = createAdminRoutes({
   adminJwtSecret,
 });
 
-// Compose: relayApp handles /, /auth/*, /v1/*; we mount admin under /admin.
+// Compose: relayApp handles /auth/*, /v1/*; we serve the landing page at /,
+// admin under /admin, and a health endpoint at /healthz.
 const root = new Hono();
-root.route("/", relayApp);
-root.route("/admin", adminRoutes);
 
-// Health endpoint reachable independent of any DB/Redis state — Fly uses
-// this for liveness probes.
+// Health endpoint first (registered before mounting the relay so it
+// always wins, even if the relay's "/" handler is later in priority).
 root.get("/healthz", (c) =>
   c.json({ ok: true, edition: "cloud", originator: cloudOriginator }),
 );
+
+// Landing page. We serve the HTML directly rather than pulling in
+// @hono/node-server's serveStatic — one file doesn't earn a static
+// middleware dependency.
+import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const landingPath = join(__dirname, "..", "public", "index.html");
+let landingHtml: string | null = null;
+root.get("/", async (c) => {
+  if (!landingHtml) {
+    try {
+      landingHtml = await readFile(landingPath, "utf8");
+    } catch {
+      // Fall back to the relay's JSON status if the landing file is
+      // missing (e.g., a stripped-down container build).
+      return c.json({ ok: true, service: "authai-cloud-relay" });
+    }
+  }
+  return c.html(landingHtml);
+});
+
+root.route("/", relayApp);
+root.route("/admin", adminRoutes);
 
 startBackgroundSweep(store);
 
