@@ -69,19 +69,20 @@ export default function HomePage() {
               </h1>
 
               <p className="landing-sub">
-                Your users sign in with their AI subscription.{" "}
-                <code className="landing-chip">authai.js</code> wires it into your app
-                in two lines. Every model call lands on their plan — across ChatGPT,
-                Grok, and Copilot.
+                Your users sign in once with their ChatGPT, Grok, or Copilot
+                subscription. Your backend keeps using the{" "}
+                <code className="landing-chip">openai</code> SDK — just point{" "}
+                <code className="landing-chip">baseURL</code> at the relay.
+                Every model call lands on the user's plan, not yours.
               </p>
 
               <div className="landing-cta">
                 <a className="landing-btn-ghost" href={GITHUB_URL} target="_blank" rel="noreferrer">
                   <GithubIcon />
-                  View on GitHub
+                  Source on GitHub
                 </a>
                 <Link href="/sign-in" className="landing-btn-primary">
-                  Sign in with GitHub
+                  Get started
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <line x1="5" y1="12" x2="19" y2="12" />
@@ -91,7 +92,7 @@ export default function HomePage() {
               </div>
 
               <div className="landing-preset">
-                <span>Or get started in one command</span>
+                <span>Or in your terminal</span>
                 <div className="landing-preset-row">
                   <code style={{
                     fontFamily: "var(--font-mono)",
@@ -101,6 +102,16 @@ export default function HomePage() {
                     border: "1px solid var(--border-strong)",
                   }}>npx authai-cloud init</code>
                 </div>
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: "var(--text-faint)",
+                    marginTop: 8,
+                  }}
+                >
+                  ~30 seconds. Writes <code style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}>AUTH_AI_SECRET</code>{" "}
+                  to your <code style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}>.env</code>.
+                </span>
               </div>
             </div>
 
