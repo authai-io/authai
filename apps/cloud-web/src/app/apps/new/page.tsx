@@ -151,10 +151,11 @@ export default async function NewAppPage({
           required
           pattern="https?://.+"
         />
-          <div className="field-hint">
-            Full URL — scheme + host + optional port. Use
-          <code>http://localhost:3000</code> for local dev. Scheme + host (+
-          optional port) only — no path.
+        <div className="au-hint">
+          The URL your app runs at — what the browser sends as the{" "}
+          <code>Origin</code> header. Use <code>https://myapp.com</code> in
+          production, <code>http://localhost:3000</code> for local dev. No
+          paths or query strings.
         </div>
 
         <p style={{ marginTop: 32, display: "flex", gap: 12 }}>
