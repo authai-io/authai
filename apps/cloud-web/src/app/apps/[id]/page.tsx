@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 import { issueCsrfToken } from "@/lib/csrf";
 import { AuthedShell } from "../../authed-shell";
 import { OriginsSection } from "./origins-section";
+import { KeysSection } from "./keys-section";
 
 export default async function AppDetailPage({
   params,
@@ -62,6 +63,15 @@ export default async function AppDetailPage({
     remove: await issueCsrfToken({ sessionCookieValue: sessionCookie, action: "origins.remove" }),
   };
 
+  const keys =
+    app.credentialType === "publishable"
+      ? await fullStore.publishableKeys.listForApp(app.id)
+      : [];
+  const keyCsrfTokens = {
+    rotate: await issueCsrfToken({ sessionCookieValue: sessionCookie, action: "keys.rotate" }),
+    revoke: await issueCsrfToken({ sessionCookieValue: sessionCookie, action: "keys.revoke" }),
+  };
+
   return (
     <AuthedShell githubLogin={session.githubLogin} breadcrumb={app.name}>
       <h1>{app.name}</h1>
@@ -95,6 +105,10 @@ export default async function AppDetailPage({
 
       {app.credentialType === "publishable" && (
         <OriginsSection appId={app.id} origins={origins} csrfTokens={csrfTokens} />
+      )}
+
+      {app.credentialType === "publishable" && (
+        <KeysSection appId={app.id} keys={keys} csrfTokens={keyCsrfTokens} />
       )}
 
       <h2>Recent events</h2>
