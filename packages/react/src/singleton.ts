@@ -98,6 +98,12 @@ function hydrateFromStorageIfNeeded(store: Store): void {
     };
   } else if (jwt) {
     // Stale/expired token in storage — clear it so future hydration doesn't keep returning it.
+    // Trade-off: if the local clock is meaningfully behind (developer machine, mobile),
+    // a token the relay would still accept gets cleared here and the user is silently
+    // signed out across all tabs sharing this localStorage key. No grace period is applied —
+    // the alternative (relying on the relay to reject expired tokens on /v1/* calls) would
+    // mean repeated 401s in production rather than a clean sign-out shell.
+    // isBrowser() above means isJwtCurrentlyValid never hits its SSR branch here in practice.
     ensureStorage(store).clear();
   }
 }
