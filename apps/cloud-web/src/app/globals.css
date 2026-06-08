@@ -1895,33 +1895,6 @@ a { color: inherit; }
   color: #5aa6ff;
 }
 
-/* === GitHub stars pill (replaces the old "Source on GitHub" ghost) === */
-.landing-stars-btn {
-  /* Inherits .landing-btn-ghost; just tightens spacing for the
-     two-part label and bumps the star icon's color to brand yellow
-     so the "open source" signal lands at a glance. */
-  gap: 8px;
-  padding: 0 18px;
-  font-variant-numeric: tabular-nums;
-}
-.landing-stars-btn svg {
-  color: #f5a524;
-}
-.landing-stars-count {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-.landing-stars-label {
-  color: var(--text-muted);
-  font-weight: 400;
-}
-.landing[data-theme="dark"] .landing-stars-count {
-  color: #fff;
-}
-.landing[data-theme="dark"] .landing-stars-label {
-  color: rgba(255, 255, 255, 0.55);
-}
-
 /* === Runways — "Two ways to run it" cards === */
 .landing-runways {
   width: 100%;

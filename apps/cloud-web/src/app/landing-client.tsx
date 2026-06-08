@@ -5,7 +5,6 @@ import { CodePreview } from "./code-preview";
 import { ThemeRoot, SunIcon, MoonIcon } from "./theme-toggle";
 import { SiteFooter } from "./site-footer";
 import { TerminalSnippet } from "./terminal-snippet";
-import { GitHubStarsButton } from "./github-stars-button";
 
 const GITHUB_URL = "https://github.com/riccardoio/authai";
 
@@ -69,7 +68,10 @@ export function LandingClient({ session }: { session: SessionShape }) {
               </p>
 
               <div className="landing-cta">
-                <GitHubStarsButton />
+                <a className="landing-btn-ghost" href={GITHUB_URL} target="_blank" rel="noreferrer">
+                  <GithubIcon />
+                  Source on GitHub
+                </a>
                 <Link
                   href={session ? "/dashboard" : "/sign-in"}
                   className="landing-btn-primary"
