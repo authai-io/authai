@@ -1855,6 +1855,64 @@ a { color: inherit; }
   }
 }
 
+/* === Landing demo band (live-demo CTA, between hero and trust) === */
+.landing-demo-band {
+  display: flex;
+  justify-content: center;
+  padding: 12px 24px 4px;
+}
+.landing-demo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  background: rgba(29, 77, 255, 0.06);
+  border: 1px solid rgba(29, 77, 255, 0.18);
+  border-radius: 999px;
+  color: var(--text-body);
+  font-size: 13.5px;
+  line-height: 1.4;
+  text-decoration: none;
+  transition: background var(--dur-micro) var(--ease-standard),
+    border-color var(--dur-micro) var(--ease-standard),
+    transform var(--dur-micro) var(--ease-standard);
+}
+.landing-demo-link svg {
+  flex-shrink: 0;
+  color: var(--accent);
+  transition: transform var(--dur-micro) var(--ease-standard);
+}
+.landing-demo-link strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.landing-demo-link code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--accent);
+  font-weight: 500;
+}
+.landing-demo-link:hover {
+  background: rgba(29, 77, 255, 0.1);
+  border-color: rgba(29, 77, 255, 0.32);
+  transform: translateY(-1px);
+}
+.landing-demo-link:hover svg:last-child {
+  transform: translateX(2px);
+}
+.landing[data-theme="dark"] .landing-demo-link {
+  background: rgba(90, 166, 255, 0.08);
+  border-color: rgba(90, 166, 255, 0.2);
+  color: rgba(255, 255, 255, 0.78);
+}
+.landing[data-theme="dark"] .landing-demo-link strong {
+  color: #fff;
+}
+.landing[data-theme="dark"] .landing-demo-link:hover {
+  background: rgba(90, 166, 255, 0.14);
+  border-color: rgba(90, 166, 255, 0.36);
+}
+
 /* === Landing trust band (standalone micro-section between hero and flow) === */
 .landing-trust-band {
   display: flex;
