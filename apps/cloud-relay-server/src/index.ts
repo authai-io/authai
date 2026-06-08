@@ -166,10 +166,15 @@ const relayApp = createRelayApp({
     // the tenant.
     async (c, next) => {
       if (!c.req.path.startsWith("/v1/")) return next();
-      const tenant = await tenantResolver.resolve(c);
-      if (!tenant?.appId) return next(); // tenantMiddleware will 401
+      const tenantResult = await tenantResolver.resolve(c);
+      // "BOTH_HEADERS" and null both fall through to tenantMiddleware which
+      // will emit the appropriate 400/401. The rate-limiter only runs when
+      // we have a real tenant with an appId.
+      if (!tenantResult || tenantResult === "BOTH_HEADERS" || !tenantResult.appId) return next();
+      const tenant = tenantResult;
+      const appId = tenant.appId as string;
       c.set("tenant", tenant);
-      const app = await store.apps.getById(tenant.appId);
+      const app = await store.apps.getById(appId);
       if (!app) return next();
       const decision = await rateLimiter.check(app.id, app.rateLimitPerMin);
       if (!decision.allowed) {
