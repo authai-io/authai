@@ -470,8 +470,22 @@ export function createStore({ url }: { url: string }) {
         );
       },
 
+      async setStatusForApp(appId: string, originId: string, status: OriginStatus): Promise<boolean> {
+        const info = db
+          .prepare("UPDATE app_origins SET status = ? WHERE id = ? AND app_id = ?")
+          .run(status, originId, appId);
+        return info.changes > 0;
+      },
+
       async remove(originId: string): Promise<void> {
         db.prepare("DELETE FROM app_origins WHERE id = ?").run(originId);
+      },
+
+      async removeForApp(appId: string, originId: string): Promise<boolean> {
+        const info = db
+          .prepare("DELETE FROM app_origins WHERE id = ? AND app_id = ?")
+          .run(originId, appId);
+        return info.changes > 0;
       },
 
       async recordUsage(originId: string, ip: string): Promise<void> {
@@ -587,6 +601,18 @@ export function createStore({ url }: { url: string }) {
            SET status = 'revoked', revoked_at = ?, revoked_by = ?
            WHERE id = ? AND status = 'active'`,
         ).run(now, actorGhId, keyId);
+      },
+
+      async revokeForApp(appId: string, keyId: string, actorGhId: string): Promise<boolean> {
+        const now = Date.now();
+        const info = db
+          .prepare(
+            `UPDATE app_publishable_keys
+             SET status = 'revoked', revoked_at = ?, revoked_by = ?
+             WHERE id = ? AND app_id = ? AND status = 'active'`,
+          )
+          .run(now, actorGhId, keyId, appId);
+        return info.changes > 0;
       },
 
       async recordUsage(keyId: string, ip: string): Promise<void> {

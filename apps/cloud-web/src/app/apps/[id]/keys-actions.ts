@@ -81,7 +81,8 @@ export async function revokeKeyAction(
   }
 
   const store = await getFullStore();
-  await store.publishableKeys.revoke(keyId, githubUserId);
+  const ok = await store.publishableKeys.revokeForApp(appId, keyId, githubUserId);
+  if (!ok) return { error: "Key not found." };
 
   await writeAudit({
     appId,

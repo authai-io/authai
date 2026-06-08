@@ -7,7 +7,7 @@ import { generateApiKey, hashApiKey, normalizeOrigin, classifyOriginTier } from 
 import { CLI_BRIDGE_COOKIE, verifyBridge } from "@/lib/cli-bridge";
 import { setOneTimeKey } from "@/lib/one-time-key";
 import { cookies } from "next/headers";
-import { issueCsrfToken } from "@/lib/csrf";
+import { issueCsrfToken, verifyCsrf } from "@/lib/csrf";
 import { AuthedShell } from "../../authed-shell";
 import { PublishableConfirmForm } from "./publishable-form";
 
@@ -62,10 +62,21 @@ export default async function NewAppPage({
 
   const isCliFlow = params.cli === "1";
 
+  const sessionCookieForCsrf = (await cookies()).get(SESSION_COOKIE_NAME)?.value ?? "";
+  const secretCreateCsrfToken = await issueCsrfToken({
+    sessionCookieValue: sessionCookieForCsrf,
+    action: "apps.create.secret",
+  });
+
   async function createApp(formData: FormData) {
     "use server";
     const session = await getSession();
     if (!session) redirect("/sign-in?return=/apps/new");
+
+    const csrfField = String(formData.get("_csrf") ?? "");
+    const sc = (await cookies()).get(SESSION_COOKIE_NAME)?.value ?? "";
+    const csrfValid = await verifyCsrf({ token: csrfField, sessionCookieValue: sc, action: "apps.create.secret" });
+    if (!csrfValid) throw new Error("Invalid CSRF token. Refresh and try again.");
 
     const name = String(formData.get("name") ?? "").trim();
     const rawOrigin = String(formData.get("origin") ?? "").trim();
@@ -171,6 +182,7 @@ export default async function NewAppPage({
 
       <form action={createApp}>
         {isCliFlow && <input type="hidden" name="cli" value="1" />}
+        <input type="hidden" name="_csrf" value={secretCreateCsrfToken} />
 
         <label className="au-label" htmlFor="name">App name</label>
         <input

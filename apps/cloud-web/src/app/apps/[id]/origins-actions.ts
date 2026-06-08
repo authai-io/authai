@@ -89,7 +89,8 @@ export async function disableOriginAction(
   }
 
   const store = await getFullStore();
-  await store.origins.setStatus(originId, "disabled");
+  const ok = await store.origins.setStatusForApp(appId, originId, "disabled");
+  if (!ok) return { error: "Origin not found." };
 
   await writeAudit({
     appId,
@@ -113,7 +114,8 @@ export async function enableOriginAction(
   }
 
   const store = await getFullStore();
-  await store.origins.setStatus(originId, "active");
+  const ok = await store.origins.setStatusForApp(appId, originId, "active");
+  if (!ok) return { error: "Origin not found." };
 
   await writeAudit({
     appId,
@@ -144,7 +146,8 @@ export async function removeOriginAction(
         "Cannot remove the last origin. Disable it instead, or revoke the app.",
     };
   }
-  await store.origins.remove(originId);
+  const ok = await store.origins.removeForApp(appId, originId);
+  if (!ok) return { error: "Origin not found." };
 
   await writeAudit({
     appId,

@@ -23,7 +23,7 @@ import {
   createRelayApp,
   startBackgroundSweep,
 } from "@authai/relay";
-import { createPostgresStore } from "@authai/relay-store-postgres";
+import { createPostgresStore, createStore } from "@authai/relay-store-postgres";
 import {
   CloudTenantResolver,
   createKillSwitch,
@@ -92,7 +92,15 @@ const redisUrl = requiredFromAny(["AUTH_AI_REDIS_URL", "REDIS_URL"]);
 const dailyRequestCap = Number(process.env.AUTH_AI_CLOUD_DAILY_CAP ?? "5000");
 
 console.log("[cloud-relay-server] connecting to Postgres + Redis...");
+// Legacy store: AuthRecordStore + apps (AppAdminStore) + audit. Used by the
+// relay core (auth_records, per-app rate limiting via store.apps.getById) and
+// the background sweep.
 const store = await createPostgresStore({ connectionString: databaseUrl });
+// Namespaced store: full AppStore with origins + publishableKeys namespaces.
+// Required by CloudTenantResolver which calls appStore.publishableKeys.getActiveByHash
+// and appStore.origins.getAppByActiveOrigin. The legacy PostgresStore doesn't
+// expose those namespaces.
+const appStore = await createStore({ url: databaseUrl });
 const redis = new Redis(redisUrl);
 
 const killSwitchEventLog = (event: KillSwitchEvent) => {
@@ -125,12 +133,12 @@ const rateLimiter = createRateLimiter({
     ),
 });
 
-// CloudTenantResolver expects the namespaced AppStore shape (apps / origins /
-// publishableKeys). PostgresStore.apps is the flat AppAdminStore that pre-dates
-// the namespace split. Wrap it so the resolver receives a conformant AppStore.
+// CloudTenantResolver uses the namespaced AppStore (origins + publishableKeys).
+// appStore is produced by createStore() and satisfies AppStore natively —
+// no cast required.
 const tenantResolver = new CloudTenantResolver({
   masterIdentitySecret,
-  appStore: { apps: store.apps } as import("@authai/relay-store-postgres").AppStore,
+  appStore,
   cloudOriginator,
 });
 

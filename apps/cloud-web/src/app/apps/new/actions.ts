@@ -65,7 +65,7 @@ export async function createPublishableAppAction(input: {
   const pkPlain = generatePublishableKey();
   const pkHash = hashApiKey(pkPlain);
 
-  // The apps table requires api_key_hash + origin (both UNIQUE).
+  // The apps table requires api_key_hash (UNIQUE).
   // Publishable apps don't use a secret key; we store a deterministic
   // placeholder so the UNIQUE constraint is satisfied without leaking a
   // usable secret into the DB.
@@ -73,23 +73,20 @@ export async function createPublishableAppAction(input: {
 
   const store = await getFullStore();
 
+  // Use the transactional createPublishable method so that app + initial
+  // origin + initial key are written atomically. Partial failures can no
+  // longer leave an orphan app row with no key/origin.
   try {
-    await store.apps.create({
+    await store.apps.createPublishable({
       id: appId,
       apiKeyHash: placeholderApiKeyHash,
       origin: normalized,
+      originTier: tier,
       name: input.name.trim(),
       ownerGithubId: session.githubUserId,
       ownerEmail: session.githubEmail,
-      originVerifyToken: "unused-publishable",
-      credentialType: "publishable",
-    });
-    await store.origins.add({ appId, origin: normalized, tier });
-    await store.publishableKeys.create({
-      appId,
-      keyHash: pkHash,
-      label: "initial",
-      createdBy: session.githubUserId,
+      pkHash,
+      pkLabel: "initial",
     });
   } catch (err: unknown) {
     const isUniqueViolation =

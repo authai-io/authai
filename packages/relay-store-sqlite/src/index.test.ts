@@ -202,3 +202,62 @@ describe("SQLite store — app_publishable_keys table", () => {
     expect(result).toBeNull();
   });
 });
+
+describe("SQLite store — app-scoped IDOR-safe mutations", () => {
+  let store: ReturnType<typeof createStore>;
+
+  beforeEach(() => {
+    store = createStore({ url: ":memory:" });
+  });
+
+  it("setStatusForApp returns false when originId belongs to a different app", async () => {
+    await store.apps.create({ id: "app_a", apiKeyHash: "ha", origin: "https://a.com", name: "A", ownerGithubId: "g", originVerifyToken: "t" });
+    await store.apps.create({ id: "app_b", apiKeyHash: "hb", origin: "https://b.com", name: "B", ownerGithubId: "g", originVerifyToken: "t" });
+    const origin = await store.origins.add({ appId: "app_a", origin: "https://c.com", tier: "production" });
+    // app_b tries to disable app_a's origin — should be blocked
+    const ok = await store.origins.setStatusForApp("app_b", origin.id, "disabled");
+    expect(ok).toBe(false);
+    // origin should still be active
+    const list = await store.origins.listForApp("app_a");
+    expect(list.find((o) => o.id === origin.id)?.status).toBe("active");
+  });
+
+  it("setStatusForApp returns true when originId belongs to the correct app", async () => {
+    await store.apps.create({ id: "app_a", apiKeyHash: "ha", origin: "https://a.com", name: "A", ownerGithubId: "g", originVerifyToken: "t" });
+    const origin = await store.origins.add({ appId: "app_a", origin: "https://d.com", tier: "production" });
+    const ok = await store.origins.setStatusForApp("app_a", origin.id, "disabled");
+    expect(ok).toBe(true);
+    const list = await store.origins.listForApp("app_a");
+    expect(list.find((o) => o.id === origin.id)?.status).toBe("disabled");
+  });
+
+  it("removeForApp returns false when originId belongs to a different app", async () => {
+    await store.apps.create({ id: "app_a", apiKeyHash: "ha", origin: "https://a.com", name: "A", ownerGithubId: "g", originVerifyToken: "t" });
+    await store.apps.create({ id: "app_b", apiKeyHash: "hb", origin: "https://b.com", name: "B", ownerGithubId: "g", originVerifyToken: "t" });
+    const origin = await store.origins.add({ appId: "app_a", origin: "https://e.com", tier: "production" });
+    const ok = await store.origins.removeForApp("app_b", origin.id);
+    expect(ok).toBe(false);
+    const list = await store.origins.listForApp("app_a");
+    expect(list.find((o) => o.id === origin.id)).toBeDefined();
+  });
+
+  it("revokeForApp returns false when keyId belongs to a different app", async () => {
+    await store.apps.create({ id: "app_a", apiKeyHash: "ha", origin: "https://a.com", name: "A", ownerGithubId: "g", originVerifyToken: "t", credentialType: "publishable" });
+    await store.apps.create({ id: "app_b", apiKeyHash: "hb", origin: "https://b.com", name: "B", ownerGithubId: "g", originVerifyToken: "t", credentialType: "publishable" });
+    const key = await store.publishableKeys.create({ appId: "app_a", keyHash: "keyhash1", createdBy: "g" });
+    const ok = await store.publishableKeys.revokeForApp("app_b", key.id, "g");
+    expect(ok).toBe(false);
+    // key should still be active
+    const result = await store.publishableKeys.getActiveByHash("keyhash1");
+    expect(result?.key.status).toBe("active");
+  });
+
+  it("revokeForApp returns true when keyId belongs to the correct app", async () => {
+    await store.apps.create({ id: "app_a", apiKeyHash: "ha", origin: "https://a.com", name: "A", ownerGithubId: "g", originVerifyToken: "t", credentialType: "publishable" });
+    const key = await store.publishableKeys.create({ appId: "app_a", keyHash: "keyhash2", createdBy: "g" });
+    const ok = await store.publishableKeys.revokeForApp("app_a", key.id, "g");
+    expect(ok).toBe(true);
+    const result = await store.publishableKeys.getActiveByHash("keyhash2");
+    expect(result).toBeNull();
+  });
+});

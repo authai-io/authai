@@ -4,7 +4,7 @@ import { ulid } from "ulid";
 import { getSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { getFullStore, getStore } from "@/lib/db";
 import { cookies } from "next/headers";
-import { issueCsrfToken } from "@/lib/csrf";
+import { issueCsrfToken, verifyCsrf } from "@/lib/csrf";
 import { AuthedShell } from "../../authed-shell";
 import { OriginsSection } from "./origins-section";
 import { KeysSection } from "./keys-section";
@@ -22,10 +22,16 @@ export default async function AppDetailPage({
   const app = await store.apps.getById(id);
   if (!app || app.ownerGithubId !== session.githubUserId) redirect("/dashboard");
 
-  async function revoke(_: FormData) {
+  async function revoke(formData: FormData) {
     "use server";
     const session = await getSession();
     if (!session) redirect("/sign-in");
+
+    const csrfField = String(formData.get("_csrf") ?? "");
+    const sc = (await cookies()).get(SESSION_COOKIE_NAME)?.value ?? "";
+    const csrfValid = await verifyCsrf({ token: csrfField, sessionCookieValue: sc, action: "apps.revoke" });
+    if (!csrfValid) throw new Error("Invalid CSRF token. Refresh and try again.");
+
     const store = await getStore();
     const existing = await store.apps.getById(id);
     if (!existing || existing.ownerGithubId !== session.githubUserId) {
@@ -71,6 +77,7 @@ export default async function AppDetailPage({
     rotate: await issueCsrfToken({ sessionCookieValue: sessionCookie, action: "keys.rotate" }),
     revoke: await issueCsrfToken({ sessionCookieValue: sessionCookie, action: "keys.revoke" }),
   };
+  const revokeCsrfToken = await issueCsrfToken({ sessionCookieValue: sessionCookie, action: "apps.revoke" });
 
   return (
     <AuthedShell githubLogin={session.githubLogin} breadcrumb={app.name}>
@@ -139,6 +146,7 @@ export default async function AppDetailPage({
           new sign-ins are blocked. The audit log row is preserved.
         </p>
         <form action={revoke}>
+          <input type="hidden" name="_csrf" value={revokeCsrfToken} />
           <button className="au-btn au-btn-danger" type="submit">
             Revoke app
           </button>

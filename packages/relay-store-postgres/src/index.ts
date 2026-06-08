@@ -203,6 +203,22 @@ export interface AppStore {
       credentialType?: CredentialType;
       browserDirectEnabled?: boolean;
     }): Promise<AppRow>;
+    /**
+     * Atomically creates an app + initial origin + initial publishable key in
+     * a single transaction. Prevents orphan apps from partial failures.
+     * Returns the created AppRow and the plaintext key (caller must show it once).
+     */
+    createPublishable(opts: {
+      id: string;
+      apiKeyHash: string;
+      origin: string;
+      originTier: OriginTier;
+      name: string;
+      ownerGithubId: string;
+      ownerEmail?: string;
+      pkHash: string;
+      pkLabel?: string;
+    }): Promise<{ app: AppRow; originRow: OriginRow; keyRow: PublishableKeyRow }>;
     getById(id: string): Promise<AppRow | null>;
     getByApiKeyHash(hash: string): Promise<AppRow | null>;
     getByOrigin(origin: string): Promise<AppRow | null>;
@@ -215,7 +231,11 @@ export interface AppStore {
     listForApp(appId: string): Promise<OriginRow[]>;
     getAppByActiveOrigin(origin: string): Promise<AppRow | null>;
     setStatus(originId: string, status: OriginStatus): Promise<void>;
+    /** App-scoped variant: only mutates if the row belongs to appId. Returns true on match+mutate, false on no-match. */
+    setStatusForApp(appId: string, originId: string, status: OriginStatus): Promise<boolean>;
     remove(originId: string): Promise<void>;
+    /** App-scoped variant: only deletes if the row belongs to appId. Returns true on match+delete, false on no-match. */
+    removeForApp(appId: string, originId: string): Promise<boolean>;
     recordUsage(originId: string, ip: string): Promise<void>;
   };
   publishableKeys: {
@@ -228,6 +248,8 @@ export interface AppStore {
     listForApp(appId: string): Promise<PublishableKeyRow[]>;
     getActiveByHash(hash: string): Promise<{ app: AppRow; key: PublishableKeyRow } | null>;
     revoke(keyId: string, actorGhId: string): Promise<void>;
+    /** App-scoped variant: only revokes if the key belongs to appId. Returns true on match+revoke, false on no-match. */
+    revokeForApp(appId: string, keyId: string, actorGhId: string): Promise<boolean>;
     recordUsage(keyId: string, ip: string): Promise<void>;
   };
 }
@@ -762,6 +784,53 @@ export async function createStore(opts: { url: string }): Promise<AppStore & { _
           [id, revokedAt, Date.now()],
         );
       },
+
+      async createPublishable(o) {
+        const now = Date.now();
+        const originId = `org_${randomBytes(10).toString("hex")}`;
+        const keyId = `pk_${randomBytes(10).toString("hex")}`;
+        const client = await pool.connect();
+        try {
+          await client.query("BEGIN");
+          const { rows: appRows } = await client.query<DbAppRow>(
+            `INSERT INTO apps (
+              id, api_key_hash, origin, name, owner_github_id, owner_email,
+              origin_verified, origin_verified_at, origin_verify_token,
+              rate_limit_per_min, daily_request_cap, revoked_at,
+              created_at, updated_at, credential_type, browser_direct_enabled
+            ) VALUES ($1, $2, $3, $4, $5, $6, FALSE, NULL, 'unused-publishable', 60, 1000, NULL, $7, $8, 'publishable', TRUE)
+            RETURNING *`,
+            [o.id, o.apiKeyHash, o.origin, o.name, o.ownerGithubId, o.ownerEmail ?? null, now, now],
+          );
+          await client.query(
+            `INSERT INTO app_origins (id, app_id, origin, tier, status, created_at)
+             VALUES ($1, $2, $3, $4, 'active', $5)`,
+            [originId, o.id, o.origin, o.originTier, now],
+          );
+          await client.query(
+            `INSERT INTO app_publishable_keys
+               (id, app_id, key_hash, label, status, created_at, created_by)
+             VALUES ($1, $2, $3, $4, 'active', $5, $6)`,
+            [keyId, o.id, o.pkHash, o.pkLabel ?? null, now, o.ownerGithubId],
+          );
+          await client.query("COMMIT");
+          const app = rowToApp(appRows[0]!);
+          const originRow: OriginRow = {
+            id: originId, appId: o.id, origin: o.origin, tier: o.originTier,
+            status: "active", createdAt: now,
+          };
+          const keyRow: PublishableKeyRow = {
+            id: keyId, appId: o.id, keyHash: o.pkHash, label: o.pkLabel,
+            status: "active", createdAt: now, createdBy: o.ownerGithubId,
+          };
+          return { app, originRow, keyRow };
+        } catch (err) {
+          await client.query("ROLLBACK");
+          throw err;
+        } finally {
+          client.release();
+        }
+      },
     },
 
     origins: {
@@ -809,8 +878,24 @@ export async function createStore(opts: { url: string }): Promise<AppStore & { _
         );
       },
 
+      async setStatusForApp(appId, originId, status) {
+        const result = await pool.query(
+          "UPDATE app_origins SET status = $1 WHERE id = $2 AND app_id = $3",
+          [status, originId, appId],
+        );
+        return (result.rowCount ?? 0) > 0;
+      },
+
       async remove(originId) {
         await pool.query("DELETE FROM app_origins WHERE id = $1", [originId]);
+      },
+
+      async removeForApp(appId, originId) {
+        const result = await pool.query(
+          "DELETE FROM app_origins WHERE id = $1 AND app_id = $2",
+          [originId, appId],
+        );
+        return (result.rowCount ?? 0) > 0;
       },
 
       async recordUsage(originId, ip) {
@@ -909,6 +994,16 @@ export async function createStore(opts: { url: string }): Promise<AppStore & { _
            WHERE id = $3 AND status = 'active'`,
           [Date.now(), actorGhId, keyId],
         );
+      },
+
+      async revokeForApp(appId, keyId, actorGhId) {
+        const result = await pool.query(
+          `UPDATE app_publishable_keys
+           SET status = 'revoked', revoked_at = $1, revoked_by = $2
+           WHERE id = $3 AND app_id = $4 AND status = 'active'`,
+          [Date.now(), actorGhId, keyId, appId],
+        );
+        return (result.rowCount ?? 0) > 0;
       },
 
       async recordUsage(keyId, ip) {
