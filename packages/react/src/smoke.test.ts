@@ -9,4 +9,12 @@ describe("vitest infrastructure", () => {
     expect(typeof document).toBe("object");
     expect(document.body).toBeInstanceOf(HTMLBodyElement);
   });
+
+  it("has jest-dom matchers available", () => {
+    const el = document.createElement("div");
+    el.textContent = "hello";
+    document.body.appendChild(el);
+    expect(el).toBeInTheDocument();
+    expect(el).toHaveTextContent("hello");
+  });
 });
