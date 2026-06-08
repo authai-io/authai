@@ -138,6 +138,31 @@ export function tenantMiddleware(resolver: TenantResolver) {
       return c.json({ error: "unauthorized" }, 401);
     }
     c.set("tenant", tenant);
+
+    // Route-aware enforcement. Only applies when resolvedVia is explicitly
+    // set (cloud edition). When it's undefined (StaticTenantResolver /
+    // community edition) both gates are skipped — backward compat preserved.
+    if (tenant.resolvedVia !== undefined) {
+      const path = c.req.path;
+
+      // /v1/* may NEVER be reached via Origin-only resolution.
+      // Explicit credential header (secret or publishable key) is required.
+      // Closes the Codex P0-1 tenant-bypass surface.
+      if (path.startsWith("/v1/") && tenant.resolvedVia === "origin") {
+        return c.json({ error: "credential_required" }, 401);
+      }
+
+      // /auth/* on publishable apps requires explicit publishable-key header.
+      // Prevents per-key rate-limit bypass via Origin spoofing.
+      if (
+        path.startsWith("/auth/") &&
+        tenant.credentialType === "publishable" &&
+        tenant.resolvedVia === "origin"
+      ) {
+        return c.json({ error: "credential_required" }, 401);
+      }
+    }
+
     return next();
   };
 }
