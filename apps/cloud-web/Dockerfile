@@ -81,6 +81,7 @@ WORKDIR /app
 #                        case any get added later)
 COPY --from=builder /repo/apps/cloud-web/.next/standalone ./
 COPY --from=builder /repo/apps/cloud-web/.next/static    ./apps/cloud-web/.next/static
+COPY --from=builder /repo/apps/cloud-web/public          ./apps/cloud-web/public
 
 # `next start` in standalone mode is just `node server.js` from the
 # project root, which Next places inside apps/cloud-web/.
