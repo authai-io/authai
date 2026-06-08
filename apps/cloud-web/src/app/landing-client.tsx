@@ -173,9 +173,9 @@ export function LandingClient({ session }: { session: SessionShape }) {
                 <span className="landing-flow-num">3</span>
                 <h3 className="landing-flow-step-title">Calls land on their plan</h3>
                 <p className="landing-flow-step-body">
-                  Every model call bills against the user's subscription, not
-                  yours. Tokens stay encrypted end-to-end; the relay holds
-                  ciphertext, never plaintext.
+                  Every model call bills against the user's subscription,
+                  not yours. We never see their AI tokens — they&apos;re
+                  encrypted before they reach us.
                 </p>
               </li>
             </ol>

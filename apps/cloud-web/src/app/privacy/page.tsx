@@ -35,57 +35,74 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong>App metadata</strong> — the name and origin URL of
-            each app you register, the SHA-256 hash of its secret, and
-            usage limits (requests per minute, daily cap).
+            each app you register, a one-way fingerprint of its secret
+            (we never store the secret itself), and usage limits.
           </li>
           <li>
-            <strong>End-user identity hashes</strong> — when an end user
-            signs in through one of your apps with their ChatGPT, Grok,
-            or Copilot account, we store a per-app HMAC of their provider
-            identifier so the same person stays the same opaque ID across
-            visits. The plaintext identifier is never persisted.
+            <strong>End-user identity tags</strong> — when one of your
+            users signs in through your app with their ChatGPT, Grok,
+            or Copilot account, we store a scrambled tag that
+            represents them. We can&apos;t reverse it back to a real
+            account, but the same person stays a stable opaque ID
+            across visits.
           </li>
           <li>
-            <strong>Encrypted provider tokens</strong> — the OAuth
-            access/refresh tokens issued by ChatGPT, Grok, or Copilot are
-            encrypted client-side with a per-record key, and only the
-            ciphertext reaches our servers. We hold the ciphertext; the
-            decryption key is embedded in the end user&apos;s session JWT
-            and never persisted on our infrastructure.
+            <strong>Encrypted AI tokens</strong> — the access tokens
+            your users get from ChatGPT, Grok, or Copilot are
+            encrypted before they reach our servers. We hold encrypted
+            blobs only. The keys that would unlock them live in your
+            users&apos; browsers, never on our infrastructure.
           </li>
           <li>
-            <strong>Audit events</strong> — app creation, key rotation,
-            revocation, and other operational events with timestamps and
-            actor IDs (your GitHub ID or the end user&apos;s opaque ID).
+            <strong>Audit events</strong> — app creation, key
+            rotation, revocation, and similar operational events,
+            with timestamps and the actor who performed them.
           </li>
           <li>
-            <strong>Request logs</strong> — for at most 14 days: request
-            timestamp, app ID, provider, response code, and IP address.
-            Used to debug abuse and rate-limit violations; not used for
+            <strong>Request logs</strong> — for at most 14 days: when
+            a request happened, which app it belonged to, which AI
+            provider, response code, and the client&apos;s IP address.
+            Used to debug abuse and rate-limit issues; not used for
             analytics or marketing.
           </li>
         </ul>
+        <p
+          style={{
+            marginTop: 16,
+            padding: "12px 16px",
+            borderLeft: "3px solid var(--accent)",
+            background: "var(--surface-muted)",
+            borderRadius: 6,
+            fontSize: 14,
+          }}
+        >
+          Want the technical details — encryption primitives, key
+          locations, threat model? See the{" "}
+          <a href="/docs/security">Security model</a> page.
+        </p>
       </Section>
 
       <Section n={2} title="What we do NOT collect">
         <p>
-          We deliberately have no read access to:
+          We deliberately have no way to see:
         </p>
         <ul>
           <li>
-            The plaintext content of any model call (prompts, completions,
-            conversations) — these stream directly from the provider to
-            your backend; the relay forwards bytes without inspecting them.
+            <strong>The content of any AI conversation.</strong>{" "}
+            Prompts and replies stream directly from the AI provider
+            to your backend; the relay forwards the bytes without
+            looking inside them.
           </li>
           <li>
-            The plaintext OAuth tokens of your end users&apos; AI
-            subscriptions. The cryptographic design means even a full
-            database dump cannot decrypt them without the per-user session
-            JWT held only in the user&apos;s browser.
+            <strong>Your users&apos; AI provider passwords or tokens.</strong>{" "}
+            Even if our database were leaked tomorrow, the encrypted
+            blobs in it can&apos;t be unlocked without keys that only
+            live in your users&apos; own browsers.
           </li>
           <li>
-            Payment information. AuthAI Cloud is free; we do not process
-            payments and have no payment data to lose.
+            <strong>Payment information.</strong> AuthAI Cloud is
+            free; we don&apos;t process payments and have no payment
+            data to lose.
           </li>
         </ul>
       </Section>
@@ -111,10 +128,10 @@ export default function PrivacyPage() {
       <Section n={4} title="Where it lives">
         <p>
           AuthAI Cloud is hosted on Hetzner in Falkenstein, Germany.
-          Personal data is stored in a managed PostgreSQL instance and a
-          Redis instance on the same network. Encrypted token ciphertext
-          rests in the same PostgreSQL, but is cryptographically
-          inaccessible without per-user session JWTs.
+          Personal data sits in a managed database on the same private
+          network. The encrypted AI-provider tokens live in that
+          database too, but can&apos;t be unlocked without keys that we
+          never see.
         </p>
       </Section>
 
@@ -149,9 +166,10 @@ export default function PrivacyPage() {
           <li>Access the personal data we hold about you</li>
           <li>Correct inaccurate data</li>
           <li>
-            Delete your data — revoke an app from your dashboard and the
-            app row plus all associated end-user records are
-            cryptographically destroyed by deleting the wrapping key
+            Delete your data — revoke an app from your dashboard and
+            the app, plus every end-user record tied to it, is
+            deleted. We destroy the encryption key for those records
+            first, so even a recovered backup would be unreadable.
           </li>
           <li>Object to processing or restrict it</li>
           <li>Lodge a complaint with the UK Information Commissioner&apos;s Office (ICO)</li>
