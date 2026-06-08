@@ -30,5 +30,8 @@ openclaw/
 # Local design references (image-gen prompts, mood notes, etc.)
 prompts.md
 
+# Private brainstorming specs (launch scripts, working drafts, etc.)
+docs/superpowers/
+
 # Git worktrees (isolated branches created via the worktree workflow)
 .worktrees/
