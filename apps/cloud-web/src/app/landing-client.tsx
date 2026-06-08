@@ -95,8 +95,8 @@ export function LandingClient({ session }: { session: SessionShape }) {
           <section className="landing-trust-band" aria-label="Security">
             <p className="landing-trust">
               <LockIcon />
-              End-to-end encrypted. The relay holds ciphertext only, never the
-              keys to decrypt it.{" "}
+              We can&apos;t read your users&apos; AI tokens. Not even if we
+              wanted to.{" "}
               <Link href="/docs/security" className="landing-trust-link">
                 Read the security model →
               </Link>
@@ -174,7 +174,7 @@ export function LandingClient({ session }: { session: SessionShape }) {
                 <h3 className="landing-flow-step-title">Calls land on their plan</h3>
                 <p className="landing-flow-step-body">
                   Every model call bills against the user's subscription,
-                  not yours. We never see their AI tokens — they&apos;re
+                  not yours. We never see their AI tokens. They&apos;re
                   encrypted before they reach us.
                 </p>
               </li>
