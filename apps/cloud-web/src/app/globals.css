@@ -349,16 +349,6 @@ a { color: inherit; }
 .landing[data-theme="dark"] .landing-preset {
   color: rgba(255, 255, 255, 0.42);
 }
-.landing[data-theme="dark"] .landing-preset button {
-  background: transparent;
-  color: rgba(255, 255, 255, 0.7);
-  border-color: rgba(255, 255, 255, 0.14);
-}
-.landing[data-theme="dark"] .landing-preset button:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.25);
-}
 .landing[data-theme="dark"] .landing-code {
   border-color: rgba(255, 255, 255, 0.08);
 }
@@ -526,37 +516,13 @@ a { color: inherit; }
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.landing-preset-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-start;
-}
-.landing-preset button {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 32px;
-  padding: 0 14px;
-  border-radius: 9999px;
-  background: #fff;
-  color: var(--text-body);
-  font-family: var(--font-ui);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0;
-  text-transform: none;
-  border: 1px solid var(--border-strong);
-  cursor: pointer;
-  transition: background var(--dur-micro) var(--ease-standard),
-    color var(--dur-micro) var(--ease-standard),
-    border-color var(--dur-micro) var(--ease-standard);
-}
-.landing-preset button:hover {
-  background: var(--surface-muted);
-  color: var(--text-primary);
-  border-color: var(--border-darker);
-}
+/* `.landing-preset-row` + `.landing-preset button` were styling
+   leftovers from the example-react demo where this slot held the
+   ChatGPT/Grok/Copilot sign-in pills. The cloud-web landing's only
+   button inside .landing-preset is the terminal copy icon, which
+   has its own (.landing-terminal-copy) styles. Removed the dead
+   rules so the copy button stops getting repainted as a white pill
+   by the wider-specificity .landing-preset button selector. */
 
 /* === Terminal snippet — single-line shell command with copy button === */
 .landing-terminal {
