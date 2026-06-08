@@ -125,9 +125,12 @@ const rateLimiter = createRateLimiter({
     ),
 });
 
+// CloudTenantResolver expects the namespaced AppStore shape (apps / origins /
+// publishableKeys). PostgresStore.apps is the flat AppAdminStore that pre-dates
+// the namespace split. Wrap it so the resolver receives a conformant AppStore.
 const tenantResolver = new CloudTenantResolver({
   masterIdentitySecret,
-  appStore: store.apps,
+  appStore: { apps: store.apps } as import("@authai/relay-store-postgres").AppStore,
   cloudOriginator,
 });
 

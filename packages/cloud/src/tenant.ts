@@ -57,7 +57,7 @@ export class CloudTenantResolver implements TenantResolver {
     const apiSecret = c.req.header("x-authai-secret");
     if (apiSecret) {
       const hash = hashApiKey(apiSecret);
-      const app = await this.config.appStore.getByApiKeyHash(hash);
+      const app = await this.config.appStore.apps.getByApiKeyHash(hash);
       // appStore.getByApiKeyHash already excludes revoked apps via
       // `revoked_at IS NULL` in the SQL — a revoke from the dashboard
       // takes effect on the very next request.
@@ -77,7 +77,7 @@ export class CloudTenantResolver implements TenantResolver {
     const rawOrigin = c.req.header("origin");
     const origin = rawOrigin ? normalizeOrigin(rawOrigin) : null;
     if (origin) {
-      const app = await this.config.appStore.getByOrigin(origin);
+      const app = await this.config.appStore.apps.getByOrigin(origin);
       if (!app) return null;
       return this.buildTenant(app.id);
     }
