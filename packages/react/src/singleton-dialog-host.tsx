@@ -8,6 +8,8 @@ import {
   subscribeSingleton,
   signInSingleton,
   cancelSingletonFlow,
+  confirmSingletonExplain,
+  pickSingletonProvider,
 } from "./singleton.js";
 import type { ProviderId } from "./auth.js";
 
@@ -50,12 +52,12 @@ export function SingletonDialogHost() {
       toastVisible={false}
       onContinueExplain={() => {
         if (snap.pendingProvider) {
-          void signInSingleton(snap.pendingProvider);
+          void confirmSingletonExplain();
         } else {
           void signInSingleton();
         }
       }}
-      onPickProvider={(id: ProviderId) => { void signInSingleton(id); }}
+      onPickProvider={(id: ProviderId) => { void pickSingletonProvider(id); }}
       onOpenProvider={() => {
         if (snap.verification && typeof window !== "undefined") {
           window.open(snap.verification.verificationUrl, "_blank", "noopener,noreferrer");

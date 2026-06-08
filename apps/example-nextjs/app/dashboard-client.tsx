@@ -3,12 +3,12 @@
 import { SignIn, useAuthAI } from "@authai/react";
 import { useState } from "react";
 
-export function DashboardClient({ signedIn }: { signedIn: boolean }) {
-  const { signOut, jwt } = useAuthAI();
+export function DashboardClient() {
+  const { isSignedIn, signOut, jwt } = useAuthAI();
   const [reply, setReply] = useState("");
   const [pending, setPending] = useState(false);
 
-  if (!signedIn) {
+  if (!isSignedIn || !jwt) {
     return <SignIn>Sign in</SignIn>;
   }
 

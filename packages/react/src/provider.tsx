@@ -5,7 +5,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { createRoot } from "react-dom/client";
-import { decodeJwtProvider, revokeSession, signInWithProvider, type ProviderId } from "./auth.js";
+import { decodeJwtProvider, isJwtCurrentlyValid, revokeSession, signInWithProvider, type ProviderId } from "./auth.js";
 import { resolveStorage, type TokenStorage } from "./storage.js";
 import { AuthAIDialog, type DialogStep } from "./dialog/Dialog.js";
 import type { AuthAITheme } from "./dialog/theme.js";
@@ -50,9 +50,17 @@ export function AuthAIProvider({
   relayUrl, appName, initialJwt, theme, storage, children,
 }: AuthAIProviderProps) {
   const adapter = useMemo(() => resolveStorage(storage), [storage]);
-  const [jwt, setJwt] = useState<string | null>(() =>
-    initialJwt !== undefined ? initialJwt : adapter.get()
-  );
+  const [jwt, setJwt] = useState<string | null>(() => {
+    // If caller explicitly passed initialJwt (even null), honor that. But
+    // reject non-null values that are obviously stale (expired / malformed)
+    // so a stale cookie can't put the UI into a broken signed-in shell.
+    if (initialJwt !== undefined) {
+      if (initialJwt === null) return null;
+      return isJwtCurrentlyValid(initialJwt) ? initialJwt : null;
+    }
+    const stored = adapter.get();
+    return stored && isJwtCurrentlyValid(stored) ? stored : null;
+  });
   const [phase, setPhase] = useState<Phase>("idle");
   const [originStep, setOriginStep] = useState<DialogStep>("explain");
   const [presetProvider, setPresetProvider] = useState<ProviderId | null>(null);

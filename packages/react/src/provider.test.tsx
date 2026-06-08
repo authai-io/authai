@@ -45,10 +45,10 @@ describe("AuthAIProvider initialJwt", () => {
   beforeEach(() => resetSingletonForTests());
 
   it("hydrates isSignedIn from initialJwt at first render", () => {
-    // Construct a syntactically-valid JWT with payload {"prov":"xai"}.
-    // Header and signature are stubs — provider only inspects payload.prov.
+    // Construct a syntactically-valid JWT with payload {"prov":"xai","exp":<future>}.
+    // Header and signature are stubs — provider only inspects payload.prov + exp.
     const header = btoa(JSON.stringify({ alg: "HS256" })).replace(/=+$/, "");
-    const payload = btoa(JSON.stringify({ prov: "xai" })).replace(/=+$/, "");
+    const payload = btoa(JSON.stringify({ prov: "xai", exp: Math.floor(Date.now() / 1000) + 3600 })).replace(/=+$/, "");
     const fakeJwt = `${header}.${payload}.sig`;
     render(
       <AuthAIProvider relayUrl="https://r" appName="P" initialJwt={fakeJwt}>
@@ -89,6 +89,28 @@ describe("AuthAIProvider initialJwt", () => {
     // Memory storage is empty by default — no jwt found.
     render(
       <AuthAIProvider relayUrl="https://r" appName="P" storage="memory">
+        <Probe />
+      </AuthAIProvider>
+    );
+    expect(screen.getByTestId("signed").textContent).toBe("no");
+  });
+
+  it("treats an expired initialJwt as signed out (stale cookie hand-off)", () => {
+    // payload {"prov":"openai","exp":1} — expired in 1970
+    const header = btoa(JSON.stringify({ alg: "HS256" })).replace(/=+$/, "");
+    const payload = btoa(JSON.stringify({ prov: "openai", exp: 1 })).replace(/=+$/, "");
+    const expiredJwt = `${header}.${payload}.sig`;
+    render(
+      <AuthAIProvider relayUrl="https://r" appName="P" initialJwt={expiredJwt}>
+        <Probe />
+      </AuthAIProvider>
+    );
+    expect(screen.getByTestId("signed").textContent).toBe("no");
+  });
+
+  it("treats a malformed initialJwt as signed out", () => {
+    render(
+      <AuthAIProvider relayUrl="https://r" appName="P" initialJwt="not.a.jwt">
         <Probe />
       </AuthAIProvider>
     );

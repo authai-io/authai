@@ -34,7 +34,11 @@ export function decodeAuthAIToken(jwt: string | null | undefined): DecodedAuthAI
   } catch {
     return null;
   }
-  const prov = claims.prov;
+  // Legacy v1 JWTs may omit `prov` entirely; relay defaults them to "openai"
+  // (see packages/relay/src/jwt.ts). Mirror that behavior so middleware on
+  // pre-v2 sessions doesn't sign users out prematurely.
+  const provRaw = claims.prov;
+  const prov = provRaw === undefined ? "openai" : provRaw;
   if (prov !== "openai" && prov !== "xai" && prov !== "github") return null;
   const exp = claims.exp;
   if (typeof exp !== "number") return null;

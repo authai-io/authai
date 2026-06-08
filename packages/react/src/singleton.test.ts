@@ -7,6 +7,8 @@ import {
   signInSingleton,
   signOutSingleton,
   cancelSingletonFlow,
+  confirmSingletonExplain,
+  pickSingletonProvider,
 } from "./singleton.js";
 
 describe("singleton store", () => {
@@ -55,8 +57,11 @@ describe("singleton store", () => {
     expect(getSingletonSnapshot().relayUrl).toBeNull();
   });
 
-  it("requires configuration before signIn with a provider", async () => {
-    await expect(signInSingleton("openai")).rejects.toThrow(/relayUrl/);
+  it("signInSingleton(provider) without config sets error state instead of throwing", async () => {
+    await expect(signInSingleton("openai")).resolves.toBeUndefined();
+    const snap = getSingletonSnapshot();
+    expect(snap.phase).toBe("error");
+    expect(snap.error).toMatch(/relayUrl/);
   });
 
   it("survives a simulated HMR cycle (state on globalThis)", () => {
@@ -106,18 +111,45 @@ describe("singleton store", () => {
   });
 
   it("hydrates from existing storage BEFORE deciding to swap the storage spec", () => {
-    // Pre-load localStorage as if a previous session existed
-    window.localStorage.setItem("authai:jwt", "eyJ.previous.session");
+    // Pre-load localStorage as if a previous session existed (valid future exp)
+    const header = btoa(JSON.stringify({ alg: "HS256" })).replace(/=+$/, "");
+    const payload = btoa(JSON.stringify({ prov: "openai", exp: Math.floor(Date.now() / 1000) + 3600 })).replace(/=+$/, "");
+    const validJwt = `${header}.${payload}.sig`;
+    window.localStorage.setItem("authai:jwt", validJwt);
     try {
       // Configure with a DIFFERENT storage. If hydration happens before
       // the swap decision, we should still surface the prior JWT.
       configureSingleton({ relayUrl: "https://r", appName: "T", storage: "memory" });
       const snap = getSingletonSnapshot();
-      expect(snap.jwt).toBe("eyJ.previous.session");
+      expect(snap.jwt).toBe(validJwt);
       expect(snap.isSignedIn).toBe(true);
     } finally {
       window.localStorage.removeItem("authai:jwt");
     }
+  });
+
+  it("clears expired tokens from storage on hydration", () => {
+    // Pre-load a stale JWT (exp in the past)
+    const header = btoa(JSON.stringify({ alg: "HS256" })).replace(/=+$/, "");
+    const payload = btoa(JSON.stringify({ prov: "openai", exp: 1 })).replace(/=+$/, "");
+    window.localStorage.setItem("authai:jwt", `${header}.${payload}.sig`);
+    try {
+      configureSingleton({ relayUrl: "https://r", appName: "T" });
+      const snap = getSingletonSnapshot();
+      expect(snap.isSignedIn).toBe(false);
+      expect(window.localStorage.getItem("authai:jwt")).toBeNull();
+    } finally {
+      window.localStorage.removeItem("authai:jwt");
+    }
+  });
+
+  it("signInSingleton(provider) sets explain phase without starting the flow", async () => {
+    configureSingleton({ relayUrl: "https://r", appName: "T" });
+    await signInSingleton("openai");
+    const snap = getSingletonSnapshot();
+    expect(snap.phase).toBe("explain");
+    expect(snap.pendingProvider).toBe("openai");
+    expect(snap.verification).toBeNull();
   });
 });
 

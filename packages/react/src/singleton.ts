@@ -1,5 +1,6 @@
 import {
   decodeJwtProvider,
+  isJwtCurrentlyValid,
   revokeSession,
   signInWithProvider,
   type ProviderId,
@@ -88,13 +89,16 @@ function hydrateFromStorageIfNeeded(store: Store): void {
   if (store.state.jwt !== null) return;
   if (!isBrowser()) return;
   const jwt = ensureStorage(store).get();
-  if (jwt) {
+  if (jwt && isJwtCurrentlyValid(jwt)) {
     store.state = {
       ...store.state,
       jwt,
       provider: decodeJwtProvider(jwt),
       isSignedIn: true,
     };
+  } else if (jwt) {
+    // Stale/expired token in storage — clear it so future hydration doesn't keep returning it.
+    ensureStorage(store).clear();
   }
 }
 
@@ -136,31 +140,74 @@ export function subscribeSingleton(listener: () => void): () => void {
   return () => store.listeners.delete(listener);
 }
 
+/**
+ * Begin the singleton sign-in UX.
+ * - No provider: opens the picker (the user chooses).
+ * - With provider: shows the explain step with that provider preset; the
+ *   dialog host triggers confirmSingletonExplain() when the user clicks
+ *   Continue, which then starts the device-code flow.
+ *
+ * Either way, this is a UX entrypoint — it does NOT contact the relay.
+ * Errors related to missing configuration surface as renderable error state.
+ */
 export async function signInSingleton(provider?: ProviderId): Promise<void> {
   const store = getStore();
-  if (!provider) {
-    if (!store.config.relayUrl || !store.config.appName) {
-      // No provider given and no config — surface error state instead of throwing,
-      // so the dialog can render the error. The error message names the missing
-      // config so callers see it.
-      store.state = {
-        ...store.state,
-        phase: "error",
-        error: "AuthAI: call configureAuthAI({ relayUrl, appName }) before signIn()",
-      };
-      emit(store);
-      return;
-    }
-    store.state = { ...store.state, phase: "picker", error: null };
+  if (!store.config.relayUrl || !store.config.appName) {
+    store.state = {
+      ...store.state,
+      phase: "error",
+      error: "AuthAI: call configureAuthAI({ relayUrl, appName }) before signIn()",
+    };
     emit(store);
     return;
   }
-  if (!store.config.relayUrl) {
-    throw new Error("AuthAI: call configureAuthAI({ relayUrl, appName }) before signIn()");
+  store.abort?.abort();
+  store.abort = null;
+  if (provider) {
+    store.state = {
+      ...store.state,
+      pendingProvider: provider,
+      verification: null,
+      error: null,
+      phase: "explain",
+    };
+  } else {
+    store.state = {
+      ...store.state,
+      pendingProvider: null,
+      verification: null,
+      error: null,
+      phase: "picker",
+    };
   }
-  if (!store.config.appName) {
-    throw new Error("AuthAI: configureAuthAI({ appName }) is required before signIn()");
-  }
+  emit(store);
+}
+
+/**
+ * Confirm the explain step and start the device-code flow for the preset
+ * provider. Called by the dialog host when the user clicks Continue.
+ * No-op if no preset is set.
+ */
+export async function confirmSingletonExplain(): Promise<void> {
+  const store = getStore();
+  if (!store.config.relayUrl || !store.config.appName) return;
+  const provider = store.state.pendingProvider;
+  if (!provider) return;
+  await startSingletonFlow(provider);
+}
+
+/**
+ * Start the device-code flow for an explicitly-picked provider (from the
+ * picker step). Called by the dialog host when the user picks a provider
+ * from the picker UI.
+ */
+export async function pickSingletonProvider(provider: ProviderId): Promise<void> {
+  await startSingletonFlow(provider);
+}
+
+async function startSingletonFlow(provider: ProviderId): Promise<void> {
+  const store = getStore();
+  if (!store.config.relayUrl || !store.config.appName) return;
   store.abort?.abort();
   const ctrl = new AbortController();
   store.abort = ctrl;

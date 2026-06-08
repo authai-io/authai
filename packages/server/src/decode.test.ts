@@ -66,6 +66,14 @@ describe("decodeAuthAIToken", () => {
     expect(decodeAuthAIToken(undefined)).toBeNull();
   });
 
+  it("accepts legacy v1 JWTs without a `prov` claim and defaults to openai", async () => {
+    // v1 JWT: only v/rid/k, no prov field. Relay also defaults these.
+    const jwt = await makeJwt({ v: 1, rid: "r", k: "x" });
+    const claims = decodeAuthAIToken(jwt);
+    expect(claims).not.toBeNull();
+    expect(claims!.provider).toBe("openai");
+  });
+
   it("silently ignores unknown claims (extra fields don't leak into the return)", async () => {
     const jwt = await makeJwt({
       v: 2,
