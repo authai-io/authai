@@ -1,6 +1,5 @@
 import { decodeJwt } from "jose";
-
-export type ProviderId = "openai" | "xai" | "github";
+import type { ProviderId } from "./index.js";
 
 export type DecodedAuthAIToken = {
   /** Which AI provider this JWT authorizes (openai, xai, github). */

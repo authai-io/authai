@@ -65,4 +65,18 @@ describe("decodeAuthAIToken", () => {
     expect(decodeAuthAIToken(null)).toBeNull();
     expect(decodeAuthAIToken(undefined)).toBeNull();
   });
+
+  it("silently ignores unknown claims (extra fields don't leak into the return)", async () => {
+    const jwt = await makeJwt({
+      v: 2,
+      rid: "r",
+      k: "x",
+      prov: "openai",
+      sub: "user_abc",
+      aud: "future-audience",
+      arbitrary: "should-be-dropped",
+    });
+    const claims = decodeAuthAIToken(jwt) as unknown as Record<string, unknown>;
+    expect(Object.keys(claims).sort()).toEqual(["appId", "expiresAt", "provider"]);
+  });
 });
