@@ -34,6 +34,30 @@ export function LandingClient({ session }: { session: SessionShape }) {
     <ThemeRoot>
       {({ mode, toggle }) => (
         <div className="landing" data-theme={mode}>
+          <a
+            className="landing-announce"
+            href="mailto:riccardo@speedrunlabs.com?subject=Saw%20AuthAI"
+          >
+            <span className="landing-announce-dot" aria-hidden="true" />
+            <span className="landing-announce-text">
+              <strong>Liked AuthAI?</strong> The next project is more ambitious.
+              Get in touch
+            </span>
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </a>
           <header className="landing-topbar">
             <Link href="/" className="landing-brand" style={{ textDecoration: "none" }}>
               <span className="landing-brand-mark">

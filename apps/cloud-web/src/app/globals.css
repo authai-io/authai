@@ -1855,6 +1855,66 @@ a { color: inherit; }
   }
 }
 
+/* === Landing announcement bar (top of page, signals "more is coming") === */
+.landing-announce {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 9px 20px;
+  background: rgba(29, 77, 255, 0.04);
+  border-bottom: 1px solid rgba(29, 77, 255, 0.12);
+  color: var(--text-body);
+  font-size: 13px;
+  line-height: 1.4;
+  text-decoration: none;
+  text-align: center;
+  transition: background var(--dur-micro) var(--ease-standard);
+}
+.landing-announce:hover {
+  background: rgba(29, 77, 255, 0.08);
+}
+.landing-announce strong {
+  font-weight: 600;
+  color: var(--text-strong);
+}
+.landing-announce-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(29, 77, 255, 0.18);
+}
+.landing-announce svg {
+  flex-shrink: 0;
+  color: var(--accent);
+  transition: transform var(--dur-micro) var(--ease-standard);
+}
+.landing-announce:hover svg {
+  transform: translateX(2px);
+}
+.landing[data-theme="dark"] .landing-announce {
+  background: rgba(90, 166, 255, 0.06);
+  border-bottom-color: rgba(90, 166, 255, 0.14);
+  color: rgba(255, 255, 255, 0.78);
+}
+.landing[data-theme="dark"] .landing-announce strong {
+  color: #fff;
+}
+.landing[data-theme="dark"] .landing-announce:hover {
+  background: rgba(90, 166, 255, 0.12);
+}
+.landing[data-theme="dark"] .landing-announce-dot {
+  box-shadow: 0 0 0 3px rgba(90, 166, 255, 0.22);
+}
+@media (max-width: 540px) {
+  .landing-announce {
+    font-size: 12px;
+    padding: 8px 14px;
+  }
+}
+
 /* === Landing demo band (live-demo CTA, between hero and trust) === */
 .landing-demo-band {
   display: flex;
