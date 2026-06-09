@@ -10,13 +10,34 @@ const ACCENT = "#1d4dff";
 const BG = "#ffffff";
 
 /**
- * Aurora + grid backdrop mirroring the landing page's hero
- * (.landing::before + .landing::after in globals.css). Satori doesn't
- * support filter: blur, so the gradients have wider falloffs to fake
- * the same softness. A bottom-up white wash fades the grid + aurora
- * into the lower half so the headline reads clean.
+ * Fetches a Geist TTF binary that Satori can parse. Satori uses
+ * opentype.js, which supports TTF/OTF/WOFF but NOT WOFF2 — Google
+ * Fonts now serves only WOFF2 even with a downgraded User-Agent,
+ * so we go to jsdelivr's mirror of Vercel's `geist` npm package,
+ * which ships the raw .ttf files alongside the woff2.
+ */
+async function loadGeist(file: "Geist-Regular.ttf" | "Geist-SemiBold.ttf"): Promise<ArrayBuffer> {
+  const url = `https://cdn.jsdelivr.net/npm/geist@latest/dist/fonts/geist-sans/${file}`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`[opengraph-image] failed to fetch ${file}: ${res.status}`);
+  }
+  return res.arrayBuffer();
+}
+
+/**
+ * Aurora + grid backdrop mirroring the landing page hero
+ * (.landing::before + .landing::after in globals.css). Satori has
+ * no filter:blur, so softness comes from generous radial falloff
+ * + low alpha. The bottom white wash starts at 30% so the headline
+ * lands on near-white for legibility.
  */
 export default async function OpengraphImage() {
+  const [geist400, geist600] = await Promise.all([
+    loadGeist("Geist-Regular.ttf"),
+    loadGeist("Geist-SemiBold.ttf"),
+  ]);
+
   return new ImageResponse(
     (
       <div
@@ -26,38 +47,35 @@ export default async function OpengraphImage() {
           background: BG,
           display: "flex",
           position: "relative",
-          fontFamily: "sans-serif",
+          fontFamily: "Geist",
           color: INK,
           overflow: "hidden",
         }}
       >
-        {/* Aurora — soft lime blob upper-left.
-            Satori only accepts simple radial-gradient (circle at X% Y%);
-            the explicit-ellipse-size form silently no-ops, hence two
-            separate divs instead of one stacked backgroundImage. */}
+        {/* Aurora — soft lime blob upper-left, restrained alpha */}
         <div
           style={{
             position: "absolute",
-            top: -200,
-            left: -200,
-            width: 900,
-            height: 900,
+            top: -260,
+            left: -260,
+            width: 820,
+            height: 820,
             display: "flex",
             backgroundImage:
-              "radial-gradient(circle at center, rgba(57, 255, 20, 0.45), rgba(57, 255, 20, 0) 70%)",
+              "radial-gradient(circle at center, rgba(57, 255, 20, 0.22), rgba(57, 255, 20, 0) 65%)",
           }}
         />
         {/* Aurora — soft green blob upper-right */}
         <div
           style={{
             position: "absolute",
-            top: -150,
-            right: -200,
-            width: 850,
-            height: 850,
+            top: -220,
+            right: -260,
+            width: 780,
+            height: 780,
             display: "flex",
             backgroundImage:
-              "radial-gradient(circle at center, rgba(0, 255, 136, 0.38), rgba(0, 255, 136, 0) 72%)",
+              "radial-gradient(circle at center, rgba(0, 255, 136, 0.18), rgba(0, 255, 136, 0) 68%)",
           }}
         />
         {/* Grid overlay — vertical lines */}
@@ -67,7 +85,7 @@ export default async function OpengraphImage() {
             inset: 0,
             display: "flex",
             backgroundImage:
-              "linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, rgba(0, 0, 0, 0) 1px)",
+              "linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, rgba(0, 0, 0, 0) 1px)",
             backgroundSize: "56px 56px",
           }}
         />
@@ -78,18 +96,19 @@ export default async function OpengraphImage() {
             inset: 0,
             display: "flex",
             backgroundImage:
-              "linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, rgba(0, 0, 0, 0) 1px)",
+              "linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, rgba(0, 0, 0, 0) 1px)",
             backgroundSize: "56px 56px",
           }}
         />
-        {/* Bottom wash — fades aurora + grid out toward the footer */}
+        {/* Bottom wash — fades the upper half's color out so the headline
+            lands on near-white. Earlier ramp (30%) than the landing's mask. */}
         <div
           style={{
             position: "absolute",
             inset: 0,
             display: "flex",
             backgroundImage:
-              "linear-gradient(to bottom, rgba(255, 255, 255, 0) 35%, rgba(255, 255, 255, 0.92) 80%, rgba(255, 255, 255, 1) 100%)",
+              "linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.55) 38%, rgba(255, 255, 255, 0.96) 75%, rgba(255, 255, 255, 1) 100%)",
           }}
         />
         <div
@@ -103,84 +122,90 @@ export default async function OpengraphImage() {
             padding: "72px 88px",
           }}
         >
-        <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
-          <div style={{ position: "relative", display: "flex", width: 96, height: 96 }}>
-            <div
-              style={{
-                position: "absolute",
-                left: 0,
-                top: 0,
-                width: 40,
-                height: 40,
-                background: INK,
-                borderRadius: 8,
-                display: "flex",
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                left: 56,
-                top: 56,
-                width: 40,
-                height: 40,
-                background: INK,
-                borderRadius: 8,
-                display: "flex",
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                left: 28,
-                top: 28,
-                width: 40,
-                height: 40,
-                border: `6px solid ${INK}`,
-                borderRadius: 8,
-                boxSizing: "border-box",
-                display: "flex",
-              }}
-            />
+          <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
+            <div style={{ position: "relative", display: "flex", width: 96, height: 96 }}>
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  width: 40,
+                  height: 40,
+                  background: INK,
+                  borderRadius: 8,
+                  display: "flex",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  left: 56,
+                  top: 56,
+                  width: 40,
+                  height: 40,
+                  background: INK,
+                  borderRadius: 8,
+                  display: "flex",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  left: 28,
+                  top: 28,
+                  width: 40,
+                  height: 40,
+                  border: `6px solid ${INK}`,
+                  borderRadius: 8,
+                  boxSizing: "border-box",
+                  display: "flex",
+                }}
+              />
+            </div>
+            <span style={{ fontSize: 56, fontWeight: 600, letterSpacing: -1 }}>AuthAI</span>
           </div>
-          <span style={{ fontSize: 56, fontWeight: 600, letterSpacing: -1 }}>AuthAI</span>
-        </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-          <span
-            style={{
-              fontSize: 104,
-              fontWeight: 600,
-              letterSpacing: -3,
-              lineHeight: 1.02,
-              maxWidth: 980,
-              display: "flex",
-            }}
-          >
-            Auth for AI builders.
-          </span>
-          <span
-            style={{
-              fontSize: 36,
-              color: SUBTLE,
-              lineHeight: 1.3,
-              maxWidth: 980,
-              display: "flex",
-            }}
-          >
-            Your users sign in once with their AI subscription. Every model call lands on their plan.
-          </span>
-        </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+            <span
+              style={{
+                fontSize: 104,
+                fontWeight: 600,
+                letterSpacing: -3,
+                lineHeight: 1.02,
+                maxWidth: 980,
+                display: "flex",
+              }}
+            >
+              Auth for AI builders.
+            </span>
+            <span
+              style={{
+                fontSize: 36,
+                color: SUBTLE,
+                lineHeight: 1.3,
+                maxWidth: 980,
+                display: "flex",
+              }}
+            >
+              Your users sign in once with their AI subscription. Every model call lands on their plan.
+            </span>
+          </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-          <span style={{ fontSize: 30, color: SUBTLE, display: "flex" }}>authai.io</span>
-          <span style={{ fontSize: 26, color: ACCENT, fontWeight: 500, display: "flex" }}>
-            Open source · Self-hostable
-          </span>
-        </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+            <span style={{ fontSize: 30, color: SUBTLE, display: "flex" }}>authai.io</span>
+            <span style={{ fontSize: 26, color: ACCENT, fontWeight: 500, display: "flex" }}>
+              Open source · Self-hostable
+            </span>
+          </div>
         </div>
       </div>
     ),
-    { ...size },
+    {
+      ...size,
+      fonts: [
+        { name: "Geist", data: geist400, weight: 400, style: "normal" },
+        { name: "Geist", data: geist600, weight: 600, style: "normal" },
+      ],
+    },
   );
 }
