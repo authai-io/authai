@@ -5,25 +5,24 @@ export const alt =
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// Brand tokens (mirror globals.css). Keep in sync if you bump theme.
-const INK = "#0a0a0a";
-const SUBTLE = "#525252";
-const ACCENT = "#1d4dff";
-const BG = "#ffffff";
-const TERMINAL_BG = "#0a0a0a";
-const TERMINAL_FG = "#e5e5e5";
-const TERMINAL_MUTED = "#737373";
-
-// Single radius scale (small-soft family). Cards and logo squares scale together.
-const R_SMALL = 4;
-const R_MEDIUM = 10;
+// Dark-mode tokens. Background sits just above pure-black with a cool
+// tint so the brand-blue accent reads harmoniously. Aurora and a center
+// glow give the canvas depth instead of a flat void.
+const BG = "#0d0f13";
+const WASH_RGB = "13, 15, 19";
+const FG = "#ededed";
+const SUBTLE = "#a3a3a3";
+const TERMINAL_BG = "#1a1d24";
+const TERMINAL_BORDER = "#272b34";
+const RADIUS = 10;
+const MARK_RADIUS = 4;
 
 /**
  * Fetches a Geist TTF binary that Satori can parse. Satori uses
- * opentype.js, which supports TTF/OTF/WOFF but NOT WOFF2. Google
- * Fonts now serves only WOFF2 even with a downgraded UA, so we
- * pull from jsdelivr's mirror of Vercel's `geist` npm package,
- * which ships the raw .ttf files alongside the woff2.
+ * opentype.js, which supports TTF/OTF/WOFF but NOT WOFF2 — Google Fonts
+ * now serves only WOFF2 even with a downgraded UA, so we pull from
+ * jsdelivr's mirror of Vercel's `geist` npm package, which ships raw
+ * .ttf files alongside the woff2.
  */
 async function loadGeist(
   pkg: "geist-sans" | "geist-mono",
@@ -38,21 +37,24 @@ async function loadGeist(
 }
 
 /**
- * OG image. 1200x630, ~50-80 KB rendered. Must be readable at 200px
- * thumbnail (iMessage / Twitter inline preview), so the headline
- * carries the composition.
+ * OG image. 1200x630, ~50-130 KB rendered. Must read at 200px thumbnail
+ * (iMessage / Twitter inline preview), so the headline carries the
+ * composition.
  *
  * Design tenets:
- *   - Headline matches the landing H1 exactly so click-through reinforces
- *     (tweet -> preview -> landing all say the same thing).
- *   - A literal `npx authai-cloud init` terminal card answers "how do I
- *     try this" before the user even clicks.
- *   - Soft lime + green aurora upper corners (same signature as landing
- *     hero) for visual identity without competing with text.
- *   - No decorative grid (banned per design-taste-frontend section 9.F).
- *   - No corner decoration strip (banned per 9.F).
- *   - One radius scale (small-soft) for shape consistency.
- *   - Brand mark from landing-client.tsx.
+ *   - Dark canvas with brand-blue aurora upper-left and cyan upper-right.
+ *     Stands out in a feed full of white dev-tool OGs (Vercel, Linear,
+ *     Resend, Cursor, Bolt — all light).
+ *   - Headline matches the landing-page H1 verbatim so click-through
+ *     reinforces (tweet -> preview -> landing all say the same thing).
+ *   - Real `npx authai-cloud init` terminal card answers "how do I try
+ *     this" before the click. White text on a lifted dark surface.
+ *   - Subtitle in one line so the layout breathes; the "your users pay
+ *     for inference" idea is fully carried by the headline.
+ *   - Brand mark from landing-client.tsx for visual consistency.
+ *   - No grid backdrop, no corner decoration strip (banned per
+ *     design-taste-frontend §9.F).
+ *   - Em-dash banned in user-visible strings per §9.G.
  */
 export default async function OpengraphImage() {
   const [geist400, geist600, geistMono500] = await Promise.all([
@@ -71,11 +73,12 @@ export default async function OpengraphImage() {
           display: "flex",
           position: "relative",
           fontFamily: "Geist",
-          color: INK,
+          color: FG,
           overflow: "hidden",
         }}
       >
-        {/* Aurora: soft lime blob upper-left */}
+        {/* Aurora: brand-blue blob upper-left. Higher alpha than the
+            light variants because dark canvas absorbs colored gradient. */}
         <div
           style={{
             position: "absolute",
@@ -85,10 +88,10 @@ export default async function OpengraphImage() {
             height: 820,
             display: "flex",
             backgroundImage:
-              "radial-gradient(circle at center, rgba(57, 255, 20, 0.22), rgba(57, 255, 20, 0) 65%)",
+              "radial-gradient(circle at center, rgba(56, 119, 255, 0.42), rgba(56, 119, 255, 0) 62%)",
           }}
         />
-        {/* Aurora: soft green blob upper-right */}
+        {/* Aurora: cyan blob upper-right. Pairs with brand blue for depth. */}
         <div
           style={{
             position: "absolute",
@@ -98,18 +101,28 @@ export default async function OpengraphImage() {
             height: 780,
             display: "flex",
             backgroundImage:
-              "radial-gradient(circle at center, rgba(0, 255, 136, 0.18), rgba(0, 255, 136, 0) 68%)",
+              "radial-gradient(circle at center, rgba(0, 200, 255, 0.30), rgba(0, 200, 255, 0) 65%)",
           }}
         />
-        {/* Bottom wash: fades aurora out so the terminal card and headline
-            land on near-white, which is mandatory for legibility at thumbnail. */}
+        {/* Center radial brand-blue glow. Adds an air-pocket of light
+            through the middle so the canvas doesn't read as a flat panel. */}
         <div
           style={{
             position: "absolute",
             inset: 0,
             display: "flex",
             backgroundImage:
-              "linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.55) 38%, rgba(255, 255, 255, 0.96) 75%, rgba(255, 255, 255, 1) 100%)",
+              "radial-gradient(ellipse at 50% 35%, rgba(29, 77, 255, 0.16), rgba(29, 77, 255, 0) 55%)",
+          }}
+        />
+        {/* Bottom wash: fades aurora out so the terminal card and footer
+            URL land on a clean tone. */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            backgroundImage: `linear-gradient(to bottom, rgba(${WASH_RGB}, 0) 0%, rgba(${WASH_RGB}, 0.40) 42%, rgba(${WASH_RGB}, 0.88) 78%, rgba(${WASH_RGB}, 1) 100%)`,
           }}
         />
 
@@ -124,7 +137,7 @@ export default async function OpengraphImage() {
             padding: "64px 80px",
           }}
         >
-          {/* Brand mark + wordmark (mirrors landing-client.tsx SVG) */}
+          {/* Brand mark + wordmark (mirrors landing-client.tsx SVG). */}
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
             <div style={{ position: "relative", display: "flex", width: 56, height: 56 }}>
               <div
@@ -134,8 +147,8 @@ export default async function OpengraphImage() {
                   top: 0,
                   width: 24,
                   height: 24,
-                  background: INK,
-                  borderRadius: R_SMALL,
+                  background: FG,
+                  borderRadius: MARK_RADIUS,
                   display: "flex",
                 }}
               />
@@ -146,8 +159,8 @@ export default async function OpengraphImage() {
                   top: 32,
                   width: 24,
                   height: 24,
-                  background: INK,
-                  borderRadius: R_SMALL,
+                  background: FG,
+                  borderRadius: MARK_RADIUS,
                   display: "flex",
                 }}
               />
@@ -158,26 +171,35 @@ export default async function OpengraphImage() {
                   top: 16,
                   width: 24,
                   height: 24,
-                  border: `4px solid ${INK}`,
-                  borderRadius: R_SMALL,
+                  border: `4px solid ${FG}`,
+                  borderRadius: MARK_RADIUS,
                   boxSizing: "border-box",
                   display: "flex",
                 }}
               />
             </div>
-            <span style={{ fontSize: 40, fontWeight: 600, letterSpacing: -0.8 }}>AuthAI</span>
+            <span style={{ fontSize: 40, fontWeight: 600, letterSpacing: -0.8, color: FG }}>
+              AuthAI
+            </span>
           </div>
 
-          {/* Headline + subtitle. Headline dominates the canvas; subtitle
-              is the "what is this" answer at thumbnail size. */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          {/* Headline + subtitle. */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 22,
+              marginTop: 48,
+            }}
+          >
             <span
               style={{
-                fontSize: 108,
+                fontSize: 96,
                 fontWeight: 600,
-                letterSpacing: -3.6,
+                letterSpacing: -3.2,
                 lineHeight: 1.02,
                 maxWidth: 1040,
+                color: FG,
                 display: "flex",
               }}
             >
@@ -185,41 +207,50 @@ export default async function OpengraphImage() {
             </span>
             <span
               style={{
-                fontSize: 34,
+                fontSize: 32,
                 color: SUBTLE,
                 lineHeight: 1.3,
                 maxWidth: 1040,
                 display: "flex",
               }}
             >
-              Sign in with ChatGPT, Grok, or Copilot. Your users’ plan pays for the inference.
+              Sign in with ChatGPT, Grok, or Copilot.
             </span>
           </div>
 
-          {/* Terminal card: shows the install command. Real content,
-              answers "how do I try this" in one glance. */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+          {/* Bottom row: terminal anchored left, URL anchored right.
+              `alignItems: center` puts the URL on the terminal card's
+              midline so the two share a horizontal axis. */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: "auto",
+              paddingTop: 48,
+            }}
+          >
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                alignSelf: "flex-start",
                 gap: 18,
                 background: TERMINAL_BG,
-                borderRadius: R_MEDIUM,
+                borderRadius: RADIUS,
                 padding: "22px 28px",
                 fontFamily: "Geist Mono",
-                boxShadow: "0 14px 40px rgba(0, 0, 0, 0.12)",
+                border: `1px solid ${TERMINAL_BORDER}`,
+                boxShadow: "0 14px 40px rgba(0, 0, 0, 0.4)",
               }}
             >
-              <span style={{ color: TERMINAL_MUTED, fontSize: 28, fontWeight: 500 }}>$</span>
-              <span style={{ color: TERMINAL_FG, fontSize: 28, fontWeight: 500 }}>npx </span>
-              <span style={{ color: ACCENT, fontSize: 28, fontWeight: 500 }}>authai-cloud</span>
-              <span style={{ color: TERMINAL_FG, fontSize: 28, fontWeight: 500 }}> init</span>
+              <span style={{ color: SUBTLE, fontSize: 28, fontWeight: 500 }}>$</span>
+              <span style={{ color: FG, fontSize: 28, fontWeight: 500 }}>
+                npx authai-cloud init
+              </span>
             </div>
-
-            {/* Footer: URL only. No decoration strip. */}
-            <span style={{ fontSize: 26, color: SUBTLE, display: "flex" }}>authai.io</span>
+            <span style={{ fontSize: 26, color: SUBTLE, display: "flex" }}>
+              authai.io
+            </span>
           </div>
         </div>
       </div>
