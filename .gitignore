@@ -30,6 +30,9 @@ openclaw/
 # Local design references (image-gen prompts, mood notes, etc.)
 prompts.md
 
+# Launch / social copy drafts (tweet, HN, Reddit, etc.)
+social.md
+
 # Private brainstorming specs (launch scripts, working drafts, etc.)
 docs/superpowers/
 
