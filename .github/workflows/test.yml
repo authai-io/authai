@@ -1,0 +1,40 @@
+name: Test
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancel in-flight runs on the same PR when new commits land — saves CI minutes
+# and keeps reviewer status fresh on the latest push.
+concurrency:
+  group: test-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          # pnpm version is also pinned in package.json's packageManager
+          # field; corepack picks it up automatically. The explicit version
+          # here is a guard against pnpm/action-setup defaulting to latest
+          # if corepack is disabled in a future runner image.
+          version: 9.12.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build workspace (catches type errors)
+        run: pnpm -r build
+
+      - name: Run all tests
+        run: pnpm -r test

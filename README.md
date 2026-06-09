@@ -5,18 +5,46 @@
 [![license](https://img.shields.io/npm/l/%40authai-io%2Freact)](./LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/authai-io/authai?style=flat&logo=github)](https://github.com/authai-io/authai/stargazers)
 
-**Sign in with ChatGPT — for app builders.**
+**Sign in with ChatGPT, Grok, or Copilot — for app builders.**
 
 > [!NOTE]
 > **Enjoying AuthAI?** Something more ambitious is in the works — [get in touch](mailto:riccardo@interfacelabs.ai?subject=Saw%20AuthAI%20-%20what%20next%3F).
 
-Let your end users pay for AI features with their own ChatGPT subscription. They sign in via OAuth, your app calls models on their behalf, the cost stays on their plan. Drop in a React component, point the official `openai` SDK at the relay, done.
+Let your end users pay for AI features with their existing ChatGPT, Grok, or GitHub Copilot subscription. They sign in via OAuth, your app calls models on their behalf, the cost stays on their plan. Drop in a React component, point the official `openai` SDK at the relay, done.
 
-Self-hostable. No cloud service to sign up for. You run the relay yourself; the SDK talks to it.
+Two ways to use it: the hosted service at [authai.io](https://authai.io) (free, no setup) or self-host the relay yourself.
 
-> Experimental. AuthAI relies on the public Codex CLI OAuth client to authenticate with ChatGPT's backend, so model availability is whatever the Codex catalog exposes. Not affiliated with OpenAI. Use for personal projects and demos.
+> Experimental. AuthAI uses each provider's public device-code OAuth flow — the same one their official CLIs use. These surfaces are unofficial and providers can change them. Not affiliated with OpenAI, GitHub, or xAI. Use for personal projects and demos.
+
+## Quickstart — AuthAI Cloud
+
+The fastest path. Run this in a fresh project:
+
+```bash
+npx authai-cloud init
+# → opens authai.io in your browser to sign in with GitHub,
+#   create an app, and writes AUTH_AI_SECRET=... to .env
+```
+
+Then in your backend:
+
+```ts
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: jwt,                              // from @authai-io/react on the frontend
+  baseURL: "https://relay.authai.io/v1",
+  defaultHeaders: { "x-authai-secret": process.env.AUTH_AI_SECRET! },
+});
+```
+
+`AUTH_AI_SECRET` is a per-app credential — keep it server-side, never ship it to the browser, never commit it. The relay stores only a hash; if you lose it, revoke the app and create a new one.
+
+AuthAI Cloud is free, rate-limited, and runs the same code as the self-hosted relay. It stores only ciphertext — per-record AES keys live exclusively in each user's JWT and never reach the relay's servers in a decryptable form. Want to run it yourself? See [Self-host the relay](#self-host-the-relay) below.
 
 ## How it works
+
+Shown for ChatGPT. Grok and Copilot follow the same pattern — each uses its own provider-specific device-code OAuth flow.
 
 ```
 end-user browser
@@ -27,7 +55,7 @@ your existing backend (api.example.com)
     │   new OpenAI({ apiKey: jwt, baseURL: relayUrl + "/v1" })
     │   uses openai.chat.completions.create(...) as you already do
     ▼
-AuthAI relay (self-hosted)
+AuthAI relay (relay.authai.io or your own host)
     │   verifies JWT, decrypts the user's OpenAI tokens using the key in the JWT
     │   translates Chat Completions → Codex Responses, calls chatgpt.com/backend-api
     │   refreshes tokens server-side if needed, re-encrypts in place
@@ -47,7 +75,9 @@ The relay encrypts each user's OAuth tokens with a fresh per-record AES-256 key.
 | Server runtime RAM compromise                     | Lost — true for any system                           |
 | Your backend gets pwned                           | Lost — JWTs flow through it. Your responsibility     |
 
-## Quickstart — run the relay
+## Self-host the relay
+
+If you'd rather run the data plane yourself instead of using AuthAI Cloud:
 
 ```bash
 git clone https://github.com/authai-io/authai.git && cd authai
@@ -63,7 +93,7 @@ pnpm dev:relay
 # AuthAI relay listening on http://localhost:3000
 ```
 
-`AUTH_AI_ORIGINATOR` is the name shown on the ChatGPT consent screen during sign-in.
+`AUTH_AI_ORIGINATOR` is the name shown on the ChatGPT consent screen during sign-in. Point your frontend SDK at `http://localhost:3000` instead of `https://relay.authai.io`. Everything else in the [Integrate](#integrate) section works identically.
 
 ## Integrate
 
@@ -174,38 +204,14 @@ Sending an unsupported model name (e.g. `gpt-4`) returns a 400 from the Codex ba
 | `AUTH_AI_DB_URL`        | `./relay.db`       | SQLite file path, or `postgres://...` for the Postgres driver               |
 | `AUTH_AI_PORT`          | `3000`             |                                                                             |
 
-## Use AuthAI Cloud instead (skip the setup)
+## AuthAI Cloud architecture
 
-If you don't want to run the relay yourself, the same code is hosted as a free service. One command from a fresh project:
-
-```bash
-npx authai-cloud init
-# → opens authai.io in your browser to sign in with GitHub,
-#   create an app, and writes AUTH_AI_SECRET=... to .env
-```
-
-Then in your backend:
-
-```ts
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  apiKey: jwt,
-  baseURL: "https://relay.authai.io/v1",
-  defaultHeaders: { "x-authai-secret": process.env.AUTH_AI_SECRET! },
-});
-```
-
-`AUTH_AI_SECRET` is a per-app credential — keep it server-side, never ship it to the browser, never commit it. Lose it and the only recovery is to revoke the app and create a new one (the relay stores only a hash).
-
-Two domains:
+The hosted service runs on two domains:
 
 - **`authai.io`** — Next.js webapp. Landing page, GitHub sign-in, dashboard, docs viewer, CLI bridge. You manage apps here.
 - **`relay.authai.io`** — Hono relay. Pure data plane. The endpoint your end users sign in against and your backend hits for model calls.
 
-Same encryption model as self-hosting. The cloud host runs the same code from this repo and stores only ciphertext — per-record AES keys still live exclusively in the user's JWT and never reach the relay's servers in a decryptable form. See [docs/reference.md](./docs/reference.md) for the full architecture.
-
-AuthAI Cloud is experimental and rate-limited. Treat it as a free demo service.
+Both run the same code as the self-hosted relay. See [docs/reference.md](./docs/reference.md) for the full architecture.
 
 ## Repo layout
 
