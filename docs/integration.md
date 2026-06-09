@@ -1,6 +1,8 @@
 # Integration
 
-Add AuthAI to a frontend + backend app: render the sign-in UI, send the session JWT to your backend, and create an OpenAI-compatible client from that JWT. For self-hosting the relay, see [installation.md](./installation.md). For a Lovable-specific walkthrough (Supabase edge function and publishable-key paths), see [lovable.md](./lovable.md).
+Add AuthAI to a frontend + backend app: render the sign-in UI, send the session JWT to your backend, and create an OpenAI-compatible client from that JWT. For self-hosting the relay, see [installation.md](./installation.md).
+
+> **Using Lovable?** Skip this page — [docs/lovable.md](./lovable.md) is a focused walkthrough for both Supabase-backed and Supabase-less Lovable projects, including how to provision an app and which snippet to paste.
 
 ## What you're integrating
 
