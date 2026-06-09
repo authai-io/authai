@@ -14,13 +14,13 @@ importers:
 
   apps/cloud-relay-server:
     dependencies:
-      '@authai/cloud':
+      '@authai-io/cloud':
         specifier: workspace:*
         version: link:../../packages/cloud
-      '@authai/relay':
+      '@authai-io/relay':
         specifier: workspace:*
         version: link:../../packages/relay
-      '@authai/relay-store-postgres':
+      '@authai-io/relay-store-postgres':
         specifier: workspace:*
         version: link:../../packages/relay-store-postgres
       '@hono/node-server':
@@ -45,10 +45,10 @@ importers:
 
   apps/cloud-web:
     dependencies:
-      '@authai/cloud':
+      '@authai-io/cloud':
         specifier: workspace:*
         version: link:../../packages/cloud
-      '@authai/relay-store-postgres':
+      '@authai-io/relay-store-postgres':
         specifier: workspace:*
         version: link:../../packages/relay-store-postgres
       highlight.js:
@@ -94,7 +94,7 @@ importers:
 
   apps/example-backend:
     dependencies:
-      '@authai/server':
+      '@authai-io/server':
         specifier: workspace:*
         version: link:../../packages/server
       '@hono/node-server':
@@ -119,10 +119,10 @@ importers:
 
   apps/example-nextjs:
     dependencies:
-      '@authai/react':
+      '@authai-io/react':
         specifier: workspace:*
         version: link:../../packages/react
-      '@authai/server':
+      '@authai-io/server':
         specifier: workspace:*
         version: link:../../packages/server
       next:
@@ -153,7 +153,7 @@ importers:
 
   apps/example-react:
     dependencies:
-      '@authai/react':
+      '@authai-io/react':
         specifier: workspace:*
         version: link:../../packages/react
       react:
@@ -181,10 +181,13 @@ importers:
 
   apps/relay-server:
     dependencies:
-      '@authai/relay':
+      '@authai-io/relay':
         specifier: workspace:*
         version: link:../../packages/relay
-      '@authai/relay-store-sqlite':
+      '@authai-io/relay-store-postgres':
+        specifier: workspace:*
+        version: link:../../packages/relay-store-postgres
+      '@authai-io/relay-store-sqlite':
         specifier: workspace:*
         version: link:../../packages/relay-store-sqlite
       '@hono/node-server':
@@ -215,10 +218,10 @@ importers:
 
   packages/cloud:
     dependencies:
-      '@authai/relay':
+      '@authai-io/relay':
         specifier: workspace:*
         version: link:../relay
-      '@authai/relay-store-postgres':
+      '@authai-io/relay-store-postgres':
         specifier: workspace:*
         version: link:../relay-store-postgres
       hono:
@@ -298,7 +301,7 @@ importers:
 
   packages/relay-store-postgres:
     dependencies:
-      '@authai/relay':
+      '@authai-io/relay':
         specifier: workspace:*
         version: link:../relay
       pg:
@@ -320,7 +323,7 @@ importers:
 
   packages/relay-store-sqlite:
     dependencies:
-      '@authai/relay':
+      '@authai-io/relay':
         specifier: workspace:*
         version: link:../relay
       better-sqlite3:

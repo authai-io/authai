@@ -1,5 +1,5 @@
 {
-  "name": "@authai/cloud-web",
+  "name": "@authai-io/cloud-web",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -12,8 +12,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@authai/cloud": "workspace:*",
-    "@authai/relay-store-postgres": "workspace:*",
+    "@authai-io/cloud": "workspace:*",
+    "@authai-io/relay-store-postgres": "workspace:*",
     "highlight.js": "^11.10.0",
     "jose": "^5.9.6",
     "marked": "^14.1.3",

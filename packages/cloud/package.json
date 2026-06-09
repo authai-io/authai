@@ -1,5 +1,5 @@
 {
-  "name": "@authai/cloud",
+  "name": "@authai-io/cloud",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -16,8 +16,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@authai/relay": "workspace:*",
-    "@authai/relay-store-postgres": "workspace:*",
+    "@authai-io/relay": "workspace:*",
+    "@authai-io/relay-store-postgres": "workspace:*",
     "hono": "^4.6.10",
     "jose": "^5.9.6",
     "ulid": "^2.3.0"

@@ -31,8 +31,8 @@ COPY apps/example-nextjs/package.json           apps/example-nextjs/package.json
 
 RUN pnpm install --frozen-lockfile \
     --filter example-nextjs... \
-    --filter @authai/react... \
-    --filter @authai/server...
+    --filter @authai-io/react... \
+    --filter @authai-io/server...
 
 # ---------------------------------------------------------------------------
 
@@ -52,7 +52,7 @@ COPY packages/server  packages/server
 COPY apps/example-nextjs apps/example-nextjs
 
 # Next.js standalone build. transpilePackages handles the workspace TS
-# packages at bundle time (no separate `pnpm --filter @authai/react build`
+# packages at bundle time (no separate `pnpm --filter @authai-io/react build`
 # needed — see apps/example-nextjs/next.config.mjs).
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm --filter example-nextjs build

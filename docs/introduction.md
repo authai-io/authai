@@ -21,8 +21,8 @@ AuthAI shifts the billing source. End users sign in with their existing subscrip
 A self-hostable HTTP relay plus two TypeScript SDKs:
 
 1. **The relay** runs the OAuth device-code flow against each supported provider. It receives the user's OAuth tokens, encrypts them, stores the ciphertext, and hands the user's browser a session JWT. Subsequent model calls go through the relay, which decrypts the tokens just-in-time and forwards to the provider in OpenAI's wire format.
-2. **`@authai/react`** provides `<AuthAIProvider>`, `<SignIn>`, and `useAuthAI()`. It manages the sign-in UI and exposes a session JWT for your frontend to send to your backend.
-3. **`@authai/server`** provides `authai.session({ jwt, relayUrl })`, returning `{ user, apiKey, baseURL, openai? }`. Your backend gets an authenticated user and a pre-configured client in one call.
+2. **`@authai-io/react`** provides `<AuthAIProvider>`, `<SignIn>`, and `useAuthAI()`. It manages the sign-in UI and exposes a session JWT for your frontend to send to your backend.
+3. **`@authai-io/server`** provides `authai.session({ jwt, relayUrl })`, returning `{ user, apiKey, baseURL, openai? }`. Your backend gets an authenticated user and a pre-configured client in one call.
 
 Your frontend sends the JWT to your backend with each AI request, exactly the way you'd send any session token. The relay authenticates upstream using the user's stored provider tokens, so the call is scoped to the user's subscription.
 
@@ -70,7 +70,7 @@ A Hono HTTP server, roughly 2 KLOC. Stateless apart from an encrypted token stor
 
 You host it. See [Installation](./installation.md).
 
-### `@authai/react`
+### `@authai-io/react`
 
 The frontend SDK. Three exports:
 
@@ -80,7 +80,7 @@ The frontend SDK. Three exports:
 
 The dialog is a polished modal: explanation → provider picker → device-code display → success or error. Themed via the `theme` prop, ~6 KB compressed, no Tailwind dependency.
 
-### `@authai/server`
+### `@authai-io/server`
 
 The backend SDK. One primary entry point:
 
@@ -100,8 +100,8 @@ const { user, apiKey, baseURL, openai } = await authai.session({
 
 ### Storage drivers
 
-- `@authai/relay-store-sqlite` — single file, zero infrastructure. Good for self-hosted single-instance.
-- A Postgres driver is planned but not yet documented or shipped.
+- `@authai-io/relay-store-sqlite` — single file, zero infrastructure. Good for self-hosted single-instance.
+- `@authai-io/relay-store-postgres` — Postgres driver. Multi-instance and AuthAI Cloud use this.
 
 ### Provider adapters
 
@@ -122,7 +122,7 @@ Adding a new provider is mostly writing the adapter. The crypto, identity, and J
 ```
 end-user browser              app backend                AuthAI relay          provider
        │                              │                            │                  │
-       │  ① Sign in via @authai/react │                            │                  │
+       │  ① Sign in via @authai-io/react │                            │                  │
        │ ──────────────────────────────────────────────────────────►                  │
        │ ◄────────────────────────────────────────────────────────  │                  │
        │  ② Session JWT                                             │                  │
@@ -148,5 +148,5 @@ Steps ①–② happen once per user session. Steps ③–⑧ happen on every AI
 ## What's next
 
 - **[Installation](./installation.md)** — self-host the relay in 5 minutes
-- **[Integration](./integration.md)** — wire `@authai/react` and `@authai/server` into your app
+- **[Integration](./integration.md)** — wire `@authai-io/react` and `@authai-io/server` into your app
 - **[Security](./security.md)** — cryptographic primitives, storage model, full threat model

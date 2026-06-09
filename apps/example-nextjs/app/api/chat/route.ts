@@ -1,4 +1,4 @@
-import { authai, AuthAIUnauthorized } from "@authai/server";
+import { authai, AuthAIUnauthorized } from "@authai-io/server";
 
 export const runtime = "nodejs";
 

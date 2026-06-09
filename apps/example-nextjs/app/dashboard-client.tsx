@@ -1,6 +1,6 @@
 "use client";
 
-import { SignIn, useAuthAI } from "@authai/react";
+import { SignIn, useAuthAI } from "@authai-io/react";
 import { useState } from "react";
 
 export function DashboardClient() {

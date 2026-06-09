@@ -6,11 +6,12 @@
   "packageManager": "pnpm@9.12.0",
   "scripts": {
     "dev": "pnpm -r --parallel --filter './apps/*' dev",
-    "dev:relay": "pnpm --filter @authai/relay-server dev",
+    "dev:relay": "pnpm --filter @authai-io/relay-server dev",
     "dev:example": "pnpm --filter example-react dev",
     "dev:backend": "pnpm --filter example-backend dev",
     "build": "pnpm -r build",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "release": "pnpm -r --filter '@authai-io/*' --filter 'authai-cloud' publish --access public --no-git-checks"
   },
   "engines": {
     "node": ">=22"

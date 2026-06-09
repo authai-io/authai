@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { getSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { getFullStore } from "@/lib/db";
-import { classifyOriginTier, normalizeOrigin } from "@authai/cloud";
+import { classifyOriginTier, normalizeOrigin } from "@authai-io/cloud";
 import { verifyCsrf } from "@/lib/csrf";
 import { writeAudit } from "@/lib/audit";
 

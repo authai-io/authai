@@ -155,7 +155,7 @@ async function resolveSession(opts: SessionOptions): Promise<AuthAISession> {
   }
   const fetchImpl = opts.fetch ?? globalThis.fetch;
   if (typeof fetchImpl !== "function") {
-    throw new Error("@authai/server requires a global fetch (Node >= 18)");
+    throw new Error("@authai-io/server requires a global fetch (Node >= 18)");
   }
   const cacheEnabled = opts.cache !== false;
   const cache: CacheAdapter | null = cacheEnabled

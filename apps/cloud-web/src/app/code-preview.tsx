@@ -32,7 +32,7 @@ export function CodePreview() {
 function FrontendSnippet() {
   return (
     <pre>
-<span className="kw">import</span> <span className="punc">{"{"}</span> <span className="var">AuthAIProvider</span><span className="punc">,</span> <span className="var">SignIn</span><span className="punc">,</span> <span className="var">useAuthAI</span> <span className="punc">{"}"}</span> <span className="kw">from</span> <span className="str">"@authai/react"</span><span className="punc">;</span>{"\n\n"}
+<span className="kw">import</span> <span className="punc">{"{"}</span> <span className="var">AuthAIProvider</span><span className="punc">,</span> <span className="var">SignIn</span><span className="punc">,</span> <span className="var">useAuthAI</span> <span className="punc">{"}"}</span> <span className="kw">from</span> <span className="str">"@authai-io/react"</span><span className="punc">;</span>{"\n\n"}
 <span className="kw">export function</span> <span className="fn">App</span><span className="punc">() {"{"}</span>{"\n"}
 {"  "}<span className="com">{`// Wrap once. The provider mounts the sign-in dialog and exposes`}</span>{"\n"}
 {"  "}<span className="com">{`// the session via useAuthAI() anywhere below it.`}</span>{"\n"}
@@ -55,7 +55,7 @@ function FrontendSnippet() {
 function BackendSnippet() {
   return (
     <pre>
-<span className="kw">import</span> <span className="punc">{"{"}</span> <span className="var">authai</span> <span className="punc">{"}"}</span> <span className="kw">from</span> <span className="str">"@authai/server"</span><span className="punc">;</span>{"\n\n"}
+<span className="kw">import</span> <span className="punc">{"{"}</span> <span className="var">authai</span> <span className="punc">{"}"}</span> <span className="kw">from</span> <span className="str">"@authai-io/server"</span><span className="punc">;</span>{"\n\n"}
 <span className="com">{`// Next.js route handler, Express, Hono — anything that receives`}</span>{"\n"}
 <span className="com">{`// the jwt from the frontend (header, cookie, body — your call).`}</span>{"\n"}
 <span className="kw">export async function</span> <span className="fn">POST</span><span className="punc">(</span><span className="var">req</span><span className="punc">) {"{"}</span>{"\n"}

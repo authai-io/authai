@@ -8,7 +8,7 @@ const nextConfig = {
   // app dir — without this, the standalone build misses workspace package
   // sources resolved via transpilePackages.
   outputFileTracingRoot: new URL("../../", import.meta.url).pathname,
-  transpilePackages: ["@authai/react", "@authai/server"],
+  transpilePackages: ["@authai-io/react", "@authai-io/server"],
   webpack(config) {
     // Allow .js imports to resolve .ts / .tsx source files (ESM convention
     // used by workspace packages that ship raw TypeScript).

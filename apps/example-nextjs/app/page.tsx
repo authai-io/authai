@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { decodeAuthAIToken } from "@authai/server";
+import { decodeAuthAIToken } from "@authai-io/server";
 import { DashboardClient } from "./dashboard-client";
 
 export default async function Page() {

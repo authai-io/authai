@@ -84,7 +84,7 @@ export function decodeJwtProvider(jwt: string): ProviderId | null {
     if (!payloadPart) return null;
     // Browser-only base64url decode. We rely on `atob`, which is in every
     // modern browser. Server-side consumers shouldn't be decoding the JWT
-    // unverified — they should call /auth/whoami via @authai/server.
+    // unverified — they should call /auth/whoami via @authai-io/server.
     if (typeof atob !== "function") return null;
     const decoded = atob(
       payloadPart.replace(/-/g, "+").replace(/_/g, "/") +

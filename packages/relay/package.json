@@ -1,7 +1,14 @@
 {
-  "name": "@authai/relay",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@authai-io/relay",
+  "version": "0.1.0",
+  "description": "AuthAI relay core — Hono app that runs the OAuth device-code flow, encrypts tokens, and proxies OpenAI-compatible model calls.",
+  "homepage": "https://authai.io",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/authai-io/authai.git",
+    "directory": "packages/relay"
+  },
+  "license": "MIT",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -11,10 +18,27 @@
       "import": "./src/index.ts"
     }
   },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepack": "pnpm build && node ../../scripts/prepack.mjs",
+    "postpack": "node ../../scripts/postpack.mjs"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",

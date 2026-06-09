@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import type { AuthRecordStore } from "@authai/relay";
+import type { AuthRecordStore } from "@authai-io/relay";
 import { createPostgresStore, createStore } from "./index.js";
 import type { AppStore, AppAdminStore, AuditEventStore, PostgresStore } from "./index.js";
 
 /**
  * Type-level smoke test. Confirms the Postgres store actually implements
- * the @authai/relay AuthRecordStore interface AND exposes the cloud-only
+ * the @authai-io/relay AuthRecordStore interface AND exposes the cloud-only
  * AppAdminStore / AuditEventStore sub-stores. Doesn't connect to a real DB.
  *
  * Real integration tests against a live Postgres are run separately —
@@ -14,7 +14,7 @@ import type { AppStore, AppAdminStore, AuditEventStore, PostgresStore } from "./
  *   docker run -d --rm --name authai-pg \
  *     -e POSTGRES_PASSWORD=test -p 5432:5432 postgres:16
  *   AUTHAI_TEST_POSTGRES_URL=postgres://postgres:test@localhost:5432/postgres \
- *     pnpm --filter @authai/relay-store-postgres test
+ *     pnpm --filter @authai-io/relay-store-postgres test
  *
  * Those are deliberately not run in the default test suite because they
  * need a side dependency the rest of the repo doesn't.

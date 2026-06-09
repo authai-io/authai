@@ -5,7 +5,7 @@
  *   - Postgres-backed store (auth records + apps + audit_events)
  *   - Redis-backed kill switch + per-app rate limiter
  *   - CloudTenantResolver pulling tenant from x-authai-secret or Origin header
- *   - The /auth/* and /v1/* relay routes via @authai/relay
+ *   - The /auth/* and /v1/* relay routes via @authai-io/relay
  *
  * App registration, dashboard, and builder identity live in apps/cloud-web
  * (the Next.js webapp at authai.io). The relay reads the apps
@@ -22,15 +22,15 @@ import { Redis } from "ioredis";
 import {
   createRelayApp,
   startBackgroundSweep,
-} from "@authai/relay";
-import { createPostgresStore, createStore } from "@authai/relay-store-postgres";
+} from "@authai-io/relay";
+import { createPostgresStore, createStore } from "@authai-io/relay-store-postgres";
 import {
   CloudTenantResolver,
   createKillSwitch,
   createRateLimiter,
   resolveEdition,
   type KillSwitchEvent,
-} from "@authai/cloud";
+} from "@authai-io/cloud";
 
 function required(name: string): string {
   const value = process.env[name];
@@ -167,7 +167,7 @@ const relayApp = createRelayApp({
     },
 
     // Per-app rate limit on /v1/*. This middleware runs BEFORE
-    // @authai/relay's own tenantMiddleware, so we resolve the tenant
+    // @authai-io/relay's own tenantMiddleware, so we resolve the tenant
     // here and pin it onto context. tenantMiddleware is idempotent and
     // skips its own DB call when the tenant is already set — net result
     // is a single resolve per request even though two middlewares need

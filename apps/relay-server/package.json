@@ -1,5 +1,5 @@
 {
-  "name": "@authai/relay-server",
+  "name": "@authai-io/relay-server",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,8 +9,9 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@authai/relay": "workspace:*",
-    "@authai/relay-store-sqlite": "workspace:*",
+    "@authai-io/relay": "workspace:*",
+    "@authai-io/relay-store-postgres": "workspace:*",
+    "@authai-io/relay-store-sqlite": "workspace:*",
     "@hono/node-server": "^1.13.7"
   },
   "devDependencies": {

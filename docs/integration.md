@@ -6,22 +6,18 @@ Add AuthAI to a frontend + backend app: render the sign-in UI, send the session 
 
 ## What you're integrating
 
-- **`@authai/react`** — Provider + sign-in component + hook. Returns a session JWT to your app.
-- **`@authai/server`** — Backend SDK. Verifies the JWT with the relay, returns user identity and a pre-configured OpenAI client.
+- **`@authai-io/react`** — Provider + sign-in component + hook. Returns a session JWT to your app.
+- **`@authai-io/server`** — Backend SDK. Verifies the JWT with the relay, returns user identity and a pre-configured OpenAI client.
 
 The JWT flows: **end-user browser → your backend → AuthAI relay → AI provider**. Your backend never sees OAuth tokens; the relay decrypts them internally on each call.
 
 ## Install
 
-> **Status.** `@authai/react` and `@authai/server` are not yet published to npm. The patterns below are how they're meant to be used; until publication, depend on them via pnpm workspaces or by linking from a local clone of the monorepo.
-
-When published:
-
 ```bash
-pnpm add @authai/react @authai/server
+pnpm add @authai-io/react @authai-io/server
 ```
 
-`openai` is an optional peer dependency of `@authai/server`. Install it on the backend if you want the pre-configured client:
+`openai` is an optional peer dependency of `@authai-io/server`. Install it on the backend if you want the pre-configured client:
 
 ```bash
 pnpm add openai
@@ -45,7 +41,7 @@ Two integration paths share the same SDK:
 Call `configureAuthAI()` once at module scope. The sign-in dialog auto-mounts via a body portal on first use.
 
 ```tsx
-import { configureAuthAI, SignIn, useAuthAI } from "@authai/react";
+import { configureAuthAI, SignIn, useAuthAI } from "@authai-io/react";
 
 configureAuthAI({
   relayUrl: "https://your-relay.example",
@@ -79,7 +75,7 @@ When you need server-side rendering (Next.js, Remix), use `<AuthAIProvider>` so 
 ```tsx
 // app/layout.tsx — Next.js App Router
 import { cookies } from "next/headers";
-import { AuthAIProvider } from "@authai/react";
+import { AuthAIProvider } from "@authai-io/react";
 
 export default async function Layout({ children }) {
   const jwt = (await cookies()).get("authai-jwt")?.value ?? null;
@@ -98,11 +94,11 @@ export default async function Layout({ children }) {
 
 `storage="cookie"` is one convenient way to get a JWT visible to your server code. You can use any other source (existing session middleware, request header forwarded from middleware, etc.) — just pass it to `initialJwt`. Passing `initialJwt={null}` explicitly suppresses the storage hydration and renders signed-out, which is what you want when the server has determined the user is not authenticated.
 
-For server components that need to know "is the user signed in" without a relay call, use `decodeAuthAIToken` from `@authai/server`:
+For server components that need to know "is the user signed in" without a relay call, use `decodeAuthAIToken` from `@authai-io/server`:
 
 ```tsx
 import { cookies } from "next/headers";
-import { decodeAuthAIToken } from "@authai/server";
+import { decodeAuthAIToken } from "@authai-io/server";
 
 export default async function Page() {
   const jwt = (await cookies()).get("authai-jwt")?.value;
@@ -197,7 +193,7 @@ type TokenStorage = {
 Cookie storage options (override defaults if needed):
 
 ```tsx
-import { cookieAdapter } from "@authai/react";
+import { cookieAdapter } from "@authai-io/react";
 
 configureAuthAI({
   ...,
@@ -233,7 +229,7 @@ await fetch("/api/chat", {
 ### Receiving and verifying
 
 ```ts
-import { authai, AuthAIUnauthorized } from "@authai/server";
+import { authai, AuthAIUnauthorized } from "@authai-io/server";
 
 export async function POST(req) {
   const jwt = req.headers.get("authorization")?.slice("Bearer ".length);
@@ -313,7 +309,7 @@ authai.session({ jwt, relayUrl, cache: redisAdapter });
 For route guards where you only need to know "is the user signed in" and "which provider" — without contacting the relay — use the local decode helper:
 
 ```ts
-import { decodeAuthAIToken } from "@authai/server";
+import { decodeAuthAIToken } from "@authai-io/server";
 import { NextResponse } from "next/server";
 
 export function middleware(req) {
@@ -333,7 +329,7 @@ A minimal working integration in a Next.js 15 app.
 
 ```tsx
 import { cookies } from "next/headers";
-import { AuthAIProvider } from "@authai/react";
+import { AuthAIProvider } from "@authai-io/react";
 
 export default async function RootLayout({ children }) {
   const jwt = (await cookies()).get("authai-jwt")?.value ?? null;
@@ -358,7 +354,7 @@ export default async function RootLayout({ children }) {
 
 ```tsx
 "use client";
-import { SignIn, useAuthAI } from "@authai/react";
+import { SignIn, useAuthAI } from "@authai-io/react";
 import { useState } from "react";
 
 export default function Page() {
@@ -402,7 +398,7 @@ export default function Page() {
 **`app/api/chat/route.ts`** — the AI endpoint:
 
 ```ts
-import { authai, AuthAIUnauthorized } from "@authai/server";
+import { authai, AuthAIUnauthorized } from "@authai-io/server";
 
 export const runtime = "nodejs";
 

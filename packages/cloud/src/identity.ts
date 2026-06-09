@@ -14,7 +14,7 @@ import { PREVIEW_HOST_SUFFIXES } from "./preview-allowlist.js";
  *     every app's user.id mapping (documented elsewhere as an identity
  *     reset, not an operational rotation).
  *
- *   The per-app identitySecret is then used by @authai/relay's existing
+ *   The per-app identitySecret is then used by @authai-io/relay's existing
  *   identityId(secret, provider, accountId) HMAC. Two apps with the same
  *   upstream ChatGPT user see different user.id values.
  */
@@ -119,7 +119,7 @@ export function generatePublishableKey(): string {
  *   - production: everything else; standard cloud-edition limits
  *
  * Tier is informational in v1 — no DNS verification — but determines
- * which rate-limit bucket applies in @authai/cloud's kill-switch.
+ * which rate-limit bucket applies in @authai-io/cloud's kill-switch.
  */
 export type OriginTier = "localhost" | "preview" | "production";
 

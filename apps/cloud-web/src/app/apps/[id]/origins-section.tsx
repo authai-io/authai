@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import type { OriginRow } from "@authai/relay-store-postgres";
+import type { OriginRow } from "@authai-io/relay-store-postgres";
 import {
   addOriginAction,
   disableOriginAction,

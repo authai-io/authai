@@ -3,7 +3,7 @@ import {
   SignIn,
   useAuthAI,
   configureAuthAI,
-} from "@authai/react";
+} from "@authai-io/react";
 import { Chat } from "./components/Chat.js";
 
 const RELAY_URL = import.meta.env.VITE_RELAY_URL ?? "https://relay.authai.io";

@@ -8,8 +8,8 @@
     "start": "next start -p 5174"
   },
   "dependencies": {
-    "@authai/react": "workspace:*",
-    "@authai/server": "workspace:*",
+    "@authai-io/react": "workspace:*",
+    "@authai-io/server": "workspace:*",
     "next": "^15.0.3",
     "openai": "^4.77.0",
     "react": "^18.3.1",

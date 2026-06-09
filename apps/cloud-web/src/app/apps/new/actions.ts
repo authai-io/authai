@@ -10,7 +10,7 @@ import {
   normalizeOrigin,
   hashApiKey,
   generatePublishableKey,
-} from "@authai/cloud";
+} from "@authai-io/cloud";
 import { verifyCsrf } from "@/lib/csrf";
 import { writeAudit } from "@/lib/audit";
 

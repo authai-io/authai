@@ -13,7 +13,7 @@ The cloud edition is two separate deployments that share Postgres:
 | **cloud-relay-server** | Hetzner+Dokku | `relay.authai.io`                   | `/auth/*` (device-code, JWT), `/v1/*` (model proxy). Pure data plane. |
 | **cloud-web**      | Hetzner+Dokku    | `authai.io` (+ `www.authai.io`)     | Landing page, GitHub OAuth, dashboard, app CRUD, docs viewer, CLI bridge. Pure control plane. |
 
-The relay reads the `apps` table. The webapp writes it. They share no code beyond `@authai/cloud` (resolver, kill switch, identity derivation) and `@authai/relay-store-postgres`. There is NO admin API on the relay.
+The relay reads the `apps` table. The webapp writes it. They share no code beyond `@authai-io/cloud` (resolver, kill switch, identity derivation) and `@authai-io/relay-store-postgres`. There is NO admin API on the relay.
 
 ```
                       ┌────────────────────────────────────────┐
@@ -230,18 +230,18 @@ created_at, updated_at
 
 | Concern                               | Package                        | File                          |
 | ------------------------------------- | ------------------------------ | ----------------------------- |
-| Crypto (AES-GCM + HMAC + record key)  | `@authai/relay`                | `crypto.ts`                   |
-| JWT issue + verify                    | `@authai/relay`                | `jwt.ts`                      |
-| Tenant abstraction + middleware       | `@authai/relay`                | `tenant.ts`                   |
-| `/auth/*` routes                      | `@authai/relay`                | `auth-routes.ts`              |
-| `/v1/*` routes                        | `@authai/relay`                | `v1-routes.ts`                |
-| App composition + boot validation     | `@authai/relay`                | `app.ts`                      |
-| SQLite store                          | `@authai/relay-store-sqlite`   | `index.ts`                    |
-| Postgres store + apps + audit         | `@authai/relay-store-postgres` | `index.ts`                    |
-| Cloud tenant resolver (Origin / api key) | `@authai/cloud`             | `tenant.ts`                   |
-| HKDF per-app identity derivation      | `@authai/cloud`                | `identity.ts`                 |
-| Kill switch + rate limiter            | `@authai/cloud`                | `kill-switch.ts`              |
-| DNS TXT origin verification           | `@authai/cloud`                | `origin-verify.ts`            |
+| Crypto (AES-GCM + HMAC + record key)  | `@authai-io/relay`                | `crypto.ts`                   |
+| JWT issue + verify                    | `@authai-io/relay`                | `jwt.ts`                      |
+| Tenant abstraction + middleware       | `@authai-io/relay`                | `tenant.ts`                   |
+| `/auth/*` routes                      | `@authai-io/relay`                | `auth-routes.ts`              |
+| `/v1/*` routes                        | `@authai-io/relay`                | `v1-routes.ts`                |
+| App composition + boot validation     | `@authai-io/relay`                | `app.ts`                      |
+| SQLite store                          | `@authai-io/relay-store-sqlite`   | `index.ts`                    |
+| Postgres store + apps + audit         | `@authai-io/relay-store-postgres` | `index.ts`                    |
+| Cloud tenant resolver (Origin / api key) | `@authai-io/cloud`             | `tenant.ts`                   |
+| HKDF per-app identity derivation      | `@authai-io/cloud`                | `identity.ts`                 |
+| Kill switch + rate limiter            | `@authai-io/cloud`                | `kill-switch.ts`              |
+| DNS TXT origin verification           | `@authai-io/cloud`                | `origin-verify.ts`            |
 | `npx authai-cloud init` CLI           | `authai-cloud` (unscoped npm pkg, `packages/cli` in workspace) | `bin.ts`, `init.ts` |
 | Self-hosted boot                      | `apps/relay-server`            | `index.ts`                    |
 | Cloud relay boot                      | `apps/cloud-relay-server`      | `index.ts`                    |

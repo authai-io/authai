@@ -1,5 +1,5 @@
 {
-  "name": "@authai/cloud-relay-server",
+  "name": "@authai-io/cloud-relay-server",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,9 +9,9 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@authai/cloud": "workspace:*",
-    "@authai/relay": "workspace:*",
-    "@authai/relay-store-postgres": "workspace:*",
+    "@authai-io/cloud": "workspace:*",
+    "@authai-io/relay": "workspace:*",
+    "@authai-io/relay-store-postgres": "workspace:*",
     "@hono/node-server": "^1.13.7",
     "hono": "^4.6.10",
     "ioredis": "^5.4.2"

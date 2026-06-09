@@ -1,5 +1,5 @@
 /**
- * @authai/cloud — cloud-edition runtime add-ons for the AuthAI relay.
+ * @authai-io/cloud — cloud-edition runtime add-ons for the AuthAI relay.
  *
  * The cloud edition's relay is pure data-plane: it accepts encrypted-token
  * reads/writes, runs the OAuth device-code flow, and proxies model calls.

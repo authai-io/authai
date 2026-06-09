@@ -58,7 +58,7 @@ The relay's write transaction on a successful sign-in:
 5. `INSERT INTO auth_records (rid, iv, blob, accountIdHash, …)` — `K` is not persisted
 6. `JWT ← HS256-sign({ v:2, rid, k:base64url(K), prov, iat, exp:+14d })`
 
-After this transaction, the relay has only the ciphertext. `K` is exclusively in the JWT, which lives in the user's browser (default `localStorage` via `@authai/react`).
+After this transaction, the relay has only the ciphertext. `K` is exclusively in the JWT, which lives in the user's browser (default `localStorage` via `@authai-io/react`).
 
 Implementation: [`packages/relay/src/auth-routes.ts`](../packages/relay/src/auth-routes.ts) (`/start`, `/poll/:sessionId`).
 
@@ -225,7 +225,7 @@ Invalidates every active session. All users have to sign in again. The encrypted
 
 Changes `user.id` for every account on the next sign-in. If your app's database keys off `user.id`, those records are now orphaned.
 
-**Important:** to precompute the new `user.id` values ahead of time, you would need each affected provider account ID — which `@authai/server` never gives you (it only returns the hashed `user.id`). If your app does not separately store provider account IDs, **`IDENTITY_SECRET` rotation is an identity reset, not a key rotation**. Treat it as a planned event with a migration plan, not an operational rotation.
+**Important:** to precompute the new `user.id` values ahead of time, you would need each affected provider account ID — which `@authai-io/server` never gives you (it only returns the hashed `user.id`). If your app does not separately store provider account IDs, **`IDENTITY_SECRET` rotation is an identity reset, not a key rotation**. Treat it as a planned event with a migration plan, not an operational rotation.
 
 For an MVP demo with one or two test users, both rotations are safe: re-sign in, wipe the DB if you want to start clean.
 

@@ -1,6 +1,11 @@
 import { serve } from "@hono/node-server";
-import { createRelayApp, startBackgroundSweep } from "@authai/relay";
-import { createSqliteStore } from "@authai/relay-store-sqlite";
+import {
+  createRelayApp,
+  startBackgroundSweep,
+  type AuthRecordStore,
+} from "@authai-io/relay";
+import { createSqliteStore } from "@authai-io/relay-store-sqlite";
+import { createPostgresStore } from "@authai-io/relay-store-postgres";
 
 function required(name: string): string {
   const value = process.env[name];
@@ -15,15 +20,26 @@ const jwtSecretHex = required("AUTH_AI_JWT_SECRET");
 const identitySecretHex = required("AUTH_AI_IDENTITY_SECRET");
 const originator = required("AUTH_AI_ORIGINATOR");
 const driver = process.env.AUTH_AI_DB_DRIVER ?? "sqlite";
-const dbUrl = process.env.AUTH_AI_DB_URL ?? "./relay.db";
+const dbUrl = process.env.AUTH_AI_DB_URL ?? (driver === "sqlite" ? "./relay.db" : "");
 const port = Number(process.env.AUTH_AI_PORT ?? 3000);
 
-if (driver !== "sqlite") {
-  console.error(`Unsupported AUTH_AI_DB_DRIVER: ${driver}. Only "sqlite" is implemented in v2.`);
+let store: AuthRecordStore;
+if (driver === "sqlite") {
+  store = createSqliteStore(dbUrl);
+} else if (driver === "postgres") {
+  if (!dbUrl) {
+    console.error(
+      "AUTH_AI_DB_DRIVER=postgres requires AUTH_AI_DB_URL (e.g. postgres://user:pass@host:5432/db).",
+    );
+    process.exit(1);
+  }
+  store = await createPostgresStore({ connectionString: dbUrl });
+} else {
+  console.error(
+    `Unsupported AUTH_AI_DB_DRIVER: ${driver}. Use "sqlite" or "postgres".`,
+  );
   process.exit(1);
 }
-
-const store = createSqliteStore(dbUrl);
 const jwtSecret = new Uint8Array(Buffer.from(jwtSecretHex, "hex"));
 const identitySecret = Buffer.from(identitySecretHex, "hex");
 

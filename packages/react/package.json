@@ -1,7 +1,14 @@
 {
-  "name": "@authai/react",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@authai-io/react",
+  "version": "0.1.0",
+  "description": "AuthAI React SDK — <SignIn>, <AuthAIProvider>, useAuthAI(). Sign in with ChatGPT / Grok / Copilot.",
+  "homepage": "https://authai.io",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/authai-io/authai.git",
+    "directory": "packages/react"
+  },
+  "license": "MIT",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -11,10 +18,27 @@
       "import": "./src/index.ts"
     }
   },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepack": "pnpm build && node ../../scripts/prepack.mjs",
+    "postpack": "node ../../scripts/postpack.mjs"
   },
   "peerDependencies": {
     "react": ">=18",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import type { PublishableKeyRow } from "@authai/relay-store-postgres";
+import type { PublishableKeyRow } from "@authai-io/relay-store-postgres";
 import { rotateKeyAction, revokeKeyAction } from "./keys-actions";
 
 export function KeysSection({

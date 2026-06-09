@@ -1,7 +1,14 @@
 {
-  "name": "@authai/relay-store-postgres",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@authai-io/relay-store-postgres",
+  "version": "0.1.0",
+  "description": "Postgres storage driver for the AuthAI relay. Multi-instance persistence for self-hosted and cloud deploys.",
+  "homepage": "https://authai.io",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/authai-io/authai.git",
+    "directory": "packages/relay-store-postgres"
+  },
+  "license": "MIT",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -11,12 +18,29 @@
       "import": "./src/index.ts"
     }
   },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepack": "pnpm build && node ../../scripts/prepack.mjs",
+    "postpack": "node ../../scripts/postpack.mjs"
   },
   "dependencies": {
-    "@authai/relay": "workspace:*",
+    "@authai-io/relay": "workspace:*",
     "pg": "^8.13.1"
   },
   "devDependencies": {

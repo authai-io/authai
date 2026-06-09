@@ -1,4 +1,4 @@
-# @authai/react
+# @authai-io/react
 
 React SDK for [AuthAI](https://authai.io) — sign your users in with their own AI subscription (ChatGPT, Grok, Copilot). They sign in via OAuth, your app calls models on their behalf, the cost stays on their plan.
 
@@ -21,7 +21,7 @@ For human-written integration, see [docs/integration.md](https://github.com/auth
 
 ## Two modes
 
-- **Production (recommended):** server-side `AUTH_AI_SECRET` in a backend / edge function via `@authai/server`'s `authai.session()`.
+- **Production (recommended):** server-side `AUTH_AI_SECRET` in a backend / edge function via `@authai-io/server`'s `authai.session()`.
 - **Prototype (browser-direct):** `AUTH_AI_PUBLISHABLE_KEY` in client source via `configureAuthAI({ appId })`. Origin-pinned at the relay.
 
 See https://authai.io/llms.txt for the full decision framework and snippets.

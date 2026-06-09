@@ -32,9 +32,9 @@ COPY apps/example-react/package.json            apps/example-react/package.json
 COPY apps/example-backend/package.json          apps/example-backend/package.json
 
 RUN pnpm install --frozen-lockfile \
-    --filter @authai/cloud-web... \
-    --filter @authai/relay-store-postgres... \
-    --filter @authai/cloud...
+    --filter @authai-io/cloud-web... \
+    --filter @authai-io/relay-store-postgres... \
+    --filter @authai-io/cloud...
 
 # ---------------------------------------------------------------------------
 
@@ -59,14 +59,14 @@ COPY docs                          docs
 # Build the workspace TS packages first (Next.js needs them resolved as
 # real .js or via transpilePackages — we configured transpilePackages but
 # building catches type errors).
-RUN pnpm --filter @authai/relay build \
- && pnpm --filter @authai/relay-store-postgres build \
- && pnpm --filter @authai/cloud build
+RUN pnpm --filter @authai-io/relay build \
+ && pnpm --filter @authai-io/relay-store-postgres build \
+ && pnpm --filter @authai-io/cloud build
 
 # Next.js build (the `prebuild` script bakes docs/reference.md into
 # src/lib/generated/reference-md.ts as part of this step).
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN pnpm --filter @authai/cloud-web build
+RUN pnpm --filter @authai-io/cloud-web build
 
 # ---------------------------------------------------------------------------
 

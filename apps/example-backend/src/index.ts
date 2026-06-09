@@ -2,7 +2,7 @@ import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
 import { stream } from "hono/streaming";
-import { AuthAIUnauthorized, authai } from "@authai/server";
+import { AuthAIUnauthorized, authai } from "@authai-io/server";
 import { readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";

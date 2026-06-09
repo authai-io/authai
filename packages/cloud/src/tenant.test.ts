@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { Tenant } from "@authai/relay";
+import type { Tenant } from "@authai-io/relay";
 import { CloudTenantResolver } from "./tenant.js";
 import { hashApiKey, generatePublishableKey } from "./identity.js";
 

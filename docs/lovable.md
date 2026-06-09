@@ -59,7 +59,7 @@ supabase secrets set AUTH_AI_SECRET=authai_sk_…
 Ask Lovable to add this to your project:
 
 ```tsx
-import { configureAuthAI, SignIn, useAuthAI } from "@authai/react";
+import { configureAuthAI, SignIn, useAuthAI } from "@authai-io/react";
 
 configureAuthAI({
   relayUrl: "https://relay.authai.io",
@@ -116,7 +116,7 @@ If you'll also run locally, add `http://localhost:5173` (or whatever Vite port L
 ### 2. Add the frontend
 
 ```tsx
-import { configureAuthAI, SignIn, useAuthAI } from "@authai/react";
+import { configureAuthAI, SignIn, useAuthAI } from "@authai-io/react";
 import OpenAI from "openai";
 import { useMemo } from "react";
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import type { ProviderId } from "@authai/react";
+import type { ProviderId } from "@authai-io/react";
 
 type Msg = { role: "user" | "assistant"; content: string };
 type ModelEntry = { id: string; owned_by?: string };

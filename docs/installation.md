@@ -26,7 +26,7 @@ cd authai
 pnpm install
 ```
 
-> AuthAI's packages are not yet published to npm. Until they are, clone the monorepo and use the workspace.
+> The relay isn't designed to be `npm install`'d into another project — it's a deployable server. The cleanest path is to clone this monorepo and run `apps/relay-server` as-is. The frontend SDK ([`@authai-io/react`](https://www.npmjs.com/package/@authai-io/react)) and backend helper ([`@authai-io/server`](https://www.npmjs.com/package/@authai-io/server)) are published on npm — `npm install` those in your app.
 
 ## Configure
 
@@ -50,8 +50,8 @@ EOF
 | `AUTH_AI_JWT_SECRET`      | yes      | HS256 signing secret for session JWTs. 32+ bytes hex.                                              |
 | `AUTH_AI_IDENTITY_SECRET` | yes      | HMAC-SHA256 secret for hashing user account IDs. 32+ bytes hex. **Must differ from JWT_SECRET.**   |
 | `AUTH_AI_ORIGINATOR`      | yes      | App name shown on the provider consent screens (ChatGPT, Grok, GitHub).                            |
-| `AUTH_AI_DB_DRIVER`       | no       | `sqlite` (default). A `postgres` driver is planned but not currently shipped.                      |
-| `AUTH_AI_DB_URL`          | no       | SQLite path (`./relay.db`) or a future Postgres URL.                                               |
+| `AUTH_AI_DB_DRIVER`       | no       | `sqlite` (default) or `postgres` (via [`@authai-io/relay-store-postgres`](https://www.npmjs.com/package/@authai-io/relay-store-postgres)). |
+| `AUTH_AI_DB_URL`          | no       | SQLite path (`./relay.db`) or a Postgres connection string.                                        |
 | `AUTH_AI_PORT`            | no       | HTTP port. Defaults to `3000`.                                                                     |
 
 > **Why two secrets?** A leak of one shouldn't compromise the other. `JWT_SECRET` lets an attacker forge session tokens. `IDENTITY_SECRET` lets an attacker dictionary-attack stored account-id hashes against guessed provider IDs (notably GitHub numeric IDs). Keep them independent so a partial breach gives partial damage.
@@ -70,7 +70,7 @@ curl http://localhost:3000/
 # {"ok":true,"service":"authai-relay"}
 ```
 
-A full sign-in cycle is then driven from a browser by `@authai/react` — see [integration.md](./integration.md) for the frontend wiring. The relay's `/auth/start` and `/auth/poll/:sessionId` endpoints are designed to be polled by that SDK, not by hand.
+A full sign-in cycle is then driven from a browser by `@authai-io/react` — see [integration.md](./integration.md) for the frontend wiring. The relay's `/auth/start` and `/auth/poll/:sessionId` endpoints are designed to be polled by that SDK, not by hand.
 
 ## Security properties
 
@@ -88,7 +88,7 @@ The relay deliberately ships **no** rate limiter, body-size cap, or request logg
 Edit `apps/relay-server/src/index.ts` to wire your own middleware:
 
 ```ts
-import { createRelayApp } from "@authai/relay";
+import { createRelayApp } from "@authai-io/relay";
 import type { MiddlewareHandler } from "hono";
 
 const middleware: MiddlewareHandler[] = [
@@ -164,7 +164,7 @@ WORKDIR /app
 COPY . .
 RUN corepack enable && pnpm install --frozen-lockfile
 EXPOSE 3000
-CMD ["pnpm", "--filter", "@authai/relay-server", "start"]
+CMD ["pnpm", "--filter", "@authai-io/relay-server", "start"]
 ```
 
 For production, add a `.dockerignore`, a multi-stage build that filters install to the relay workspace, and a non-root user.
@@ -203,6 +203,6 @@ Rotating invalidates every active AuthAI session immediately. Encrypted records 
 
 Rotating changes the `user.id` value returned for every account on the next sign-in. If your app's database keys off `user.id`, those records are now orphaned.
 
-**Important:** to compute the new `user.id` ahead of time, you would need each affected provider account ID — which `@authai/server` never gives you. If your app does not separately store provider account IDs, **`IDENTITY_SECRET` rotation is effectively an identity reset**: you'll need a migration plan or a separate user mapping. Treat this rotation as a planned event, not an operational rotation.
+**Important:** to compute the new `user.id` ahead of time, you would need each affected provider account ID — which `@authai-io/server` never gives you. If your app does not separately store provider account IDs, **`IDENTITY_SECRET` rotation is effectively an identity reset**: you'll need a migration plan or a separate user mapping. Treat this rotation as a planned event, not an operational rotation.
 
 For an MVP demo with one or two test users, both rotations are safe: re-sign in, wipe the DB if you want to start clean.

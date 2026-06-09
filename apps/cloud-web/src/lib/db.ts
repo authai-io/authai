@@ -9,7 +9,7 @@ import {
   createStore,
   type PostgresStore,
   type AppStore,
-} from "@authai/relay-store-postgres";
+} from "@authai-io/relay-store-postgres";
 import { requiredFromAny } from "./env";
 
 let cached: PostgresStore | null = null;

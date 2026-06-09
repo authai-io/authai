@@ -36,7 +36,7 @@ COPY apps/example-backend/package.json          apps/example-backend/package.jso
 
 # Install deps for the demo only — example-backend (server) and
 # example-react (SPA build). The `...` suffix pulls workspace deps too
-# (@authai/server, @authai/react, react/react-dom, hono, openai).
+# (@authai-io/server, @authai-io/react, react/react-dom, hono, openai).
 RUN pnpm install --frozen-lockfile \
     --filter example-backend... \
     --filter example-react...
@@ -47,7 +47,7 @@ COPY packages/react       packages/react
 COPY apps/example-backend apps/example-backend
 COPY apps/example-react   apps/example-react
 
-# Build the SPA. Both @authai/react and @authai/server publish their
+# Build the SPA. Both @authai-io/react and @authai-io/server publish their
 # .ts source directly (no dist/), so Vite + tsx handle TypeScript at
 # build/runtime — no separate compile step for those packages.
 RUN pnpm --filter example-react build

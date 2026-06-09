@@ -82,7 +82,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
   console.log(`Done. Your app can now use Sign-in-with-ChatGPT.\n`);
   console.log(`Next steps:`);
   console.log(`  1. Install the SDK:`);
-  console.log(`       npm install @authai/react`);
+  console.log(`       npm install @authai-io/react`);
   console.log(`  2. Wrap your app:`);
   console.log(`       <AuthAIProvider relayUrl="${relayUrl}">`);
   console.log(`         <YourApp />`);

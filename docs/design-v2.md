@@ -79,8 +79,8 @@ interface AuthRecordStore {
 }
 ```
 
-- `@authai/relay-store-sqlite` — default, single-file, zero infra.
-- `@authai/relay-store-postgres` — for production deploys.
+- `@authai-io/relay-store-sqlite` — default, single-file, zero infra.
+- `@authai-io/relay-store-postgres` — for production deploys.
 
 Driver picked by explicit env var:
 
@@ -175,7 +175,7 @@ AUTH_AI_DB_DRIVER=sqlite
 AUTH_AI_DB_URL=./relay.db
 AUTH_AI_ORIGINATOR=my-app
 EOF
-pnpm install && pnpm --filter @authai/relay-server start
+pnpm install && pnpm --filter @authai-io/relay-server start
 # → relay on :3000
 ```
 
@@ -186,7 +186,7 @@ We expose only one client-side primitive: the JWT.
 ### React
 
 ```tsx
-import { AuthAIProvider, SignInWithChatGPT, useAuthAI } from "@authai/react";
+import { AuthAIProvider, SignInWithChatGPT, useAuthAI } from "@authai-io/react";
 
 <AuthAIProvider
   relayUrl="https://relay.authai.io"
@@ -225,9 +225,9 @@ Embeddings, vision, batch, assistants, fine-tunes, audio — all return the stru
 
 ## Migration from v1
 
-v1 used the working name `chatgpt-connect` and `@ai-connect/*` packages. v2 is rebranded **AuthAI** (library: `authai`, packages `@authai/*`, env prefix `AUTH_AI_`). The v1 spec stays under `docs/design.md`. v2 is a real refactor that replaces v1 in place:
+v1 used the working name `chatgpt-connect` and `@ai-connect/*` packages. v2 is rebranded **AuthAI** (library: `authai`, packages `@authai-io/*`, env prefix `AUTH_AI_`). The v1 spec stays under `docs/design.md`. v2 is a real refactor that replaces v1 in place:
 
-- v1 `packages/sdk` is deleted. `@authai/react` is a fresh implementation that exposes only the JWT.
+- v1 `packages/sdk` is deleted. `@authai-io/react` is a fresh implementation that exposes only the JWT.
 - Relay endpoints: `/auth/poll/:id` returns `{ jwt }` not `{ tokens }`; new `/auth/revoke`; new `/v1/*` OpenAI-compatible routes.
 - Relay gains storage layer, AES-GCM encrypt/decrypt, JWT issuance.
 - Example app: removes the bespoke `<Chat />` UI from v1 and demonstrates the new pattern — frontend signs in, hands the JWT to `example-backend/` which uses `openai` directly against the relay.
@@ -236,7 +236,7 @@ v1 used the working name `chatgpt-connect` and `@ai-connect/*` packages. v2 is r
 
 - Cloud edition (signup, dashboard, billing, multi-tenant originator) — separate future package.
 - Postgres driver — interface exists; sqlite implementation is enough for v2.
-- `@authai/web` framework-agnostic SDK — React is enough for v2.
+- `@authai-io/web` framework-agnostic SDK — React is enough for v2.
 - Express/Next/Hono middleware packages — the docs snippet is enough.
 
 ## Verification plan
@@ -263,7 +263,7 @@ Created or rewritten:
 - `packages/relay-store-sqlite/` — new package.
 - `packages/react/` — new package.
 - `apps/relay-server/` — new app.
-- `apps/example-react/` — rewritten to use `@authai/react`.
+- `apps/example-react/` — rewritten to use `@authai-io/react`.
 - `apps/example-backend/` — new tiny Node demo using `openai` against the relay.
 
 Deleted:

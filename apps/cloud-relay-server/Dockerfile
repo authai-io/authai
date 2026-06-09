@@ -3,7 +3,7 @@
 # Cloud relay (Hono) production image. Multi-stage:
 #
 #   1) builder — installs the full pnpm workspace (just the deps for
-#      @authai/cloud-relay-server and its transitive workspace pkgs)
+#      @authai-io/cloud-relay-server and its transitive workspace pkgs)
 #      and compiles the TypeScript packages this app uses.
 #   2) runtime — minimal Node 22 alpine, copies only what's needed to run.
 #
@@ -42,8 +42,8 @@ COPY apps/example-backend/package.json          apps/example-backend/package.jso
 # Install ONLY the deps needed for the relay app + its workspace deps.
 # --frozen-lockfile fails fast if pnpm-lock.yaml is stale.
 RUN pnpm install --frozen-lockfile \
-    --filter @authai/cloud-relay-server... \
-    --filter @authai/relay-store-postgres...
+    --filter @authai-io/cloud-relay-server... \
+    --filter @authai-io/relay-store-postgres...
 
 # Now copy the actual source for the packages we need.
 COPY packages/relay                packages/relay
@@ -54,9 +54,9 @@ COPY apps/cloud-relay-server       apps/cloud-relay-server
 # Compile TypeScript for everything in the dependency tree. The relay
 # app itself runs via tsx at runtime, so building it isn't strictly
 # required — but building the workspace deps catches type errors early.
-RUN pnpm --filter @authai/relay build \
- && pnpm --filter @authai/relay-store-postgres build \
- && pnpm --filter @authai/cloud build
+RUN pnpm --filter @authai-io/relay build \
+ && pnpm --filter @authai-io/relay-store-postgres build \
+ && pnpm --filter @authai-io/cloud build
 
 # ---------------------------------------------------------------------------
 
@@ -86,4 +86,4 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD wget -q -O - http://localhost:5000/healthz || exit 1
 
-CMD ["pnpm", "--filter", "@authai/cloud-relay-server", "start"]
+CMD ["pnpm", "--filter", "@authai-io/cloud-relay-server", "start"]

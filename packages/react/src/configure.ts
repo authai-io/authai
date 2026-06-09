@@ -12,7 +12,7 @@ export type ConfigureAuthAIOptions = {
    * When set, the SDK sends x-authai-publishable-key on /auth/* and /v1/*
    * calls. The publishable key is browser-safe; origin-pinned at the relay.
    * For production apps, prefer backend-proxied AUTH_AI_SECRET via
-   * @authai/server's authai.session().
+   * @authai-io/server's authai.session().
    */
   appId?: string;
 };

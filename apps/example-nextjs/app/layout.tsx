@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { AuthAIProvider } from "@authai/react";
+import { AuthAIProvider } from "@authai-io/react";
 
 const RELAY_URL = process.env.NEXT_PUBLIC_AUTHAI_RELAY_URL ?? "https://relay.authai.io";
 

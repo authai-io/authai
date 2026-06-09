@@ -11,7 +11,7 @@ https://github.com/authai-io/authai/blob/main/docs/integration.md.
 ## Install
 
 ```
-npm install @authai/react @authai/server
+npm install @authai-io/react @authai-io/server
 ```
 
 ## The two integration modes (read first)
@@ -22,7 +22,7 @@ Before generating any code, ask: does the user's app have a backend?
   Cloudflare Workers, Remix loaders, Hono, Express, etc.):
   -> **Generate the production path.** Frontend talks to your backend;
     backend holds AUTH_AI_SECRET and proxies to the AuthAI relay via
-    authai.session() from @authai/server. Skip to "Production path".
+    authai.session() from @authai-io/server. Skip to "Production path".
 
 - **No backend** (Lovable without Supabase, v0/Bolt sandbox, pure Vite
   SPA, Codesandbox prototype):
@@ -39,7 +39,7 @@ explicitly has no backend.
 Frontend:
 
 ```tsx
-import { configureAuthAI, SignIn, useAuthAI } from "@authai/react";
+import { configureAuthAI, SignIn, useAuthAI } from "@authai-io/react";
 
 configureAuthAI({
   relayUrl: "https://relay.authai.io",
@@ -64,7 +64,7 @@ function App() {
 Backend (Next.js route handler — adapt the pattern for Supabase / Vercel / Workers):
 
 ```ts
-import { authai, AuthAIUnauthorized } from "@authai/server";
+import { authai, AuthAIUnauthorized } from "@authai-io/server";
 
 export async function POST(req: Request) {
   const jwt = req.headers.get("authorization")?.slice("Bearer ".length);
@@ -104,7 +104,7 @@ After generating the code, tell the user:
 > drive the user's AI subscription until expiry (14 days) or sign-out.
 
 ```tsx
-import { configureAuthAI, SignIn, useAuthAI } from "@authai/react";
+import { configureAuthAI, SignIn, useAuthAI } from "@authai-io/react";
 import OpenAI from "openai";
 import { useMemo } from "react";
 
@@ -170,7 +170,7 @@ For server-rendered apps where you need first-paint auth state:
 ```tsx
 // app/layout.tsx
 import { cookies } from "next/headers";
-import { AuthAIProvider } from "@authai/react";
+import { AuthAIProvider } from "@authai-io/react";
 
 export default async function Layout({ children }) {
   const jwt = (await cookies()).get("authai-jwt")?.value ?? null;
@@ -190,7 +190,7 @@ export default async function Layout({ children }) {
 For middleware / route guards:
 
 ```ts
-import { decodeAuthAIToken } from "@authai/server";
+import { decodeAuthAIToken } from "@authai-io/server";
 import { NextResponse } from "next/server";
 
 export function middleware(req) {
@@ -222,7 +222,7 @@ The only acceptable variations are the documented query parameters above.
 - DO NOT invent an `<AuthAIProvider>` for client-only React apps. The
   singleton path is the default. `useAuthAI()` works without any wrapper.
 - DO route model calls through your backend with `authai.session()` from
-  `@authai/server` when a backend exists. This is the production path.
+  `@authai-io/server` when a backend exists. This is the production path.
 - DO use `AUTH_AI_PUBLISHABLE_KEY` (the `appId` prop) ONLY for prototypes,
   sandboxes, and static-frontend cases. Document loudly that this is
   prototype mode and the user JWT is browser-exposed bearer material.
@@ -233,7 +233,7 @@ The only acceptable variations are the documented query parameters above.
   https://authai.io/apps/new. Generated/placeholder values are rejected.
 - DO NOT call OpenAI / Anthropic SDKs directly with the user's API key.
   Use the AuthAI relay's base URL (https://relay.authai.io/v1).
-- DO use `<SignIn>` from `@authai/react`. It auto-mounts a sign-in dialog.
+- DO use `<SignIn>` from `@authai-io/react`. It auto-mounts a sign-in dialog.
   Do not build a custom sign-in form.
 - DO NOT use `AUTH_AI_SECRET` in client code. Server-side only.
 
@@ -241,7 +241,7 @@ The only acceptable variations are the documented query parameters above.
 
 - Source: https://github.com/authai-io/authai
 - Dashboard: https://authai.io
-- npm packages: `@authai/react`, `@authai/server`
+- npm packages: `@authai-io/react`, `@authai-io/server`
 - Full integration docs: https://authai.io/docs/integration
 - Security: https://authai.io/docs/security
 - Support: file an issue on GitHub

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { ulid } from "ulid";
 import { getSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { getStore } from "@/lib/db";
-import { generateApiKey, hashApiKey, normalizeOrigin, classifyOriginTier } from "@authai/cloud";
+import { generateApiKey, hashApiKey, normalizeOrigin, classifyOriginTier } from "@authai-io/cloud";
 import { CLI_BRIDGE_COOKIE, verifyBridge } from "@/lib/cli-bridge";
 import { setOneTimeKey } from "@/lib/one-time-key";
 import { cookies } from "next/headers";

@@ -69,7 +69,7 @@ Two integration paths. The singleton path is the recommended default for client 
 #### Singleton (client SPAs) — recommended
 
 ```tsx
-import { configureAuthAI, SignIn, useAuthAI } from "@authai/react";
+import { configureAuthAI, SignIn, useAuthAI } from "@authai-io/react";
 
 // Call once, at module scope. No provider tree.
 configureAuthAI({
@@ -91,7 +91,7 @@ function App() {
 ```tsx
 // app/layout.tsx — Next.js App Router
 import { cookies } from "next/headers";
-import { AuthAIProvider } from "@authai/react";
+import { AuthAIProvider } from "@authai-io/react";
 
 export default async function Layout({ children }) {
   const jwt = (await cookies()).get("authai-jwt")?.value ?? null;
@@ -165,8 +165,8 @@ Sending an unsupported model name (e.g. `gpt-4`) returns a 400 from the Codex ba
 | ----------------------- | ------------------ | --------------------------------------------------------------------------- |
 | `AUTH_AI_JWT_SECRET`    | required           | 32+ bytes hex (use `openssl rand -hex 32`)                                  |
 | `AUTH_AI_ORIGINATOR`    | required           | Shown on the ChatGPT consent screen                                         |
-| `AUTH_AI_DB_DRIVER`     | `sqlite`           | Only `sqlite` is implemented in v2; postgres is planned                     |
-| `AUTH_AI_DB_URL`        | `./relay.db`       | SQLite file path, or `postgres://...` (driver pending)                      |
+| `AUTH_AI_DB_DRIVER`     | `sqlite`           | `sqlite` (default) or `postgres`                                            |
+| `AUTH_AI_DB_URL`        | `./relay.db`       | SQLite file path, or `postgres://...` for the Postgres driver               |
 | `AUTH_AI_PORT`          | `3000`             |                                                                             |
 
 ## Use AuthAI Cloud instead (skip the setup)
@@ -242,7 +242,8 @@ pnpm test
 
 ## Roadmap
 
-- Postgres storage driver
-- Framework-agnostic `@authai/web` SDK (vanilla / web component)
+- Framework-agnostic `@authai-io/web` SDK (vanilla / web component)
 - HttpOnly cookie mode (relay-side session endpoint)
-- Cloud edition (multi-tenant, dashboard, branded consent originators)
+- Additional provider adapters
+
+Already shipped: Postgres storage driver (`@authai-io/relay-store-postgres`), AuthAI Cloud (`https://authai.io` + `https://relay.authai.io`) with multi-tenant dashboard and branded consent originators.

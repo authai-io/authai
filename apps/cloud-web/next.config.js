@@ -13,9 +13,9 @@ const nextConfig = {
   // Workspace packages publish TypeScript source. Tell Next.js to
   // transpile them through SWC so `.js`-suffixed ESM imports resolve.
   transpilePackages: [
-    "@authai/cloud",
-    "@authai/relay",
-    "@authai/relay-store-postgres",
+    "@authai-io/cloud",
+    "@authai-io/relay",
+    "@authai-io/relay-store-postgres",
   ],
   // Workspace packages use ESM-flavored `.js` imports against `.ts`
   // source files. Tell Webpack to fall back to the TS extension when

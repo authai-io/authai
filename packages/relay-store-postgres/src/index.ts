@@ -1,11 +1,11 @@
 import { randomBytes } from "node:crypto";
 import { Pool, type PoolClient, type PoolConfig } from "pg";
-import type { AuthRecord, AuthRecordStore, UpdatePatch } from "@authai/relay";
+import type { AuthRecord, AuthRecordStore, UpdatePatch } from "@authai-io/relay";
 
 /**
- * Postgres implementation of @authai/relay's AuthRecordStore + the
+ * Postgres implementation of @authai-io/relay's AuthRecordStore + the
  * cloud-edition admin stores (apps, audit_events). Same store interface
- * as @authai/relay-store-sqlite, so handlers don't care which backend
+ * as @authai-io/relay-store-sqlite, so handlers don't care which backend
  * runs underneath. Use SQLite in single-tenant self-hosted deploys;
  * use this in cloud editions where multi-tenant traffic + shared
  * state across machines requires a real DB.

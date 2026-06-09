@@ -1,6 +1,6 @@
 import Database from "better-sqlite3";
 import { randomBytes } from "node:crypto";
-import type { AuthRecord, AuthRecordStore, UpdatePatch } from "@authai/relay";
+import type { AuthRecord, AuthRecordStore, UpdatePatch } from "@authai-io/relay";
 
 // ---------------------------------------------------------------------------
 // Auth-record row shape (pre-existing)

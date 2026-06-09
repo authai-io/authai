@@ -1,6 +1,6 @@
 import type { Context } from "hono";
-import type { TenantResolver, Tenant, CredentialResolutionMethod } from "@authai/relay";
-import type { AppStore, AppRow } from "@authai/relay-store-postgres";
+import type { TenantResolver, Tenant, CredentialResolutionMethod } from "@authai-io/relay";
+import type { AppStore, AppRow } from "@authai-io/relay-store-postgres";
 import { derivePerAppIdentitySecret, hashApiKey, normalizeOrigin } from "./identity.js";
 
 export type CloudTenantConfig = {

@@ -6,7 +6,7 @@ import { readOneTimeKey } from "@/lib/one-time-key";
 import { AutoSubmit } from "./auto-submit";
 import { CopySnippetButton } from "./copy-snippet-button";
 import { AuthedShell } from "../../../authed-shell";
-import type { AppRow } from "@authai/relay-store-postgres";
+import type { AppRow } from "@authai-io/relay-store-postgres";
 import { renderSupabaseEdgeTemplate } from "@/lib/edge-templates/supabase";
 
 /**
@@ -139,7 +139,7 @@ export default async function CreatedPage({
       <h2>Next steps</h2>
       <ol style={{ paddingLeft: 20, color: "var(--text-body)", fontSize: 14, lineHeight: 1.8 }}>
         <li>
-          Install the SDK: <code>npm install @authai/react</code>
+          Install the SDK: <code>npm install @authai-io/react</code>
         </li>
         <li>
           Wrap your app with{" "}
