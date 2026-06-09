@@ -24,7 +24,7 @@ export function AuthedShell({
       {({ mode, toggle }) => (
         <div className="authed-shell" data-theme={mode}>
           <header className="authed-topbar">
-            <Link href="/dashboard" className="authed-brand" style={{ textDecoration: "none" }}>
+            <Link href="/" className="authed-brand" style={{ textDecoration: "none" }}>
               <span className="landing-brand-mark">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M12 2 L22 20 L2 20 Z" />
