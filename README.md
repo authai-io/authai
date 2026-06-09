@@ -45,7 +45,7 @@ The relay encrypts each user's OAuth tokens with a fresh per-record AES-256 key.
 ## Quickstart — run the relay
 
 ```bash
-git clone <repo> && cd authai
+git clone https://github.com/authai-io/authai.git && cd authai
 pnpm install
 
 cat > apps/relay-server/.env <<EOF

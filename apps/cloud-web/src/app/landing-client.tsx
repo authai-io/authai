@@ -6,7 +6,7 @@ import { ThemeRoot, SunIcon, MoonIcon } from "./theme-toggle";
 import { SiteFooter } from "./site-footer";
 import { TerminalSnippet } from "./terminal-snippet";
 
-const GITHUB_URL = "https://github.com/riccardoio/authai";
+const GITHUB_URL = "https://github.com/authai-io/authai";
 const DEMO_URL = "https://demo.authai.io";
 
 type SessionShape = {
@@ -62,7 +62,9 @@ export function LandingClient({ session }: { session: SessionShape }) {
             <Link href="/" className="landing-brand" style={{ textDecoration: "none" }}>
               <span className="landing-brand-mark">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M12 2 L22 20 L2 20 Z" />
+                  <rect x="0" y="0" width="10" height="10" rx="2" />
+                  <rect x="14" y="14" width="10" height="10" rx="2" />
+                  <rect x="7" y="7" width="10" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
                 </svg>
               </span>
               AuthAI

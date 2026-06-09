@@ -130,8 +130,8 @@ function SignInScreen({
 
           <p className="signin-footnote">
             Open source ·{" "}
-            <a href="https://github.com/riccardoio/authai" target="_blank" rel="noreferrer">
-              github.com/riccardoio/authai
+            <a href="https://github.com/authai-io/authai" target="_blank" rel="noreferrer">
+              github.com/authai-io/authai
             </a>
           </p>
         </div>

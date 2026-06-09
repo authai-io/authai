@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ThemeRoot, SunIcon, MoonIcon } from "../theme-toggle";
 import { SiteFooter } from "../site-footer";
 
-const GITHUB_URL = "https://github.com/riccardoio/authai";
+const GITHUB_URL = "https://github.com/authai-io/authai";
 
 type Section = { id: string; title: string; subtitle: string };
 type TocEntry = { id: string; text: string };

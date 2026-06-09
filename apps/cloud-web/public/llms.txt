@@ -6,7 +6,7 @@ they're billed by their AI provider, you pay nothing for inference.
 
 This file is the canonical instruction set for AI codegen tools (Lovable, v0,
 Bolt, Cursor, Claude Code). Human-readable docs live at
-https://github.com/riccardoio/authai/blob/main/docs/integration.md.
+https://github.com/authai-io/authai/blob/main/docs/integration.md.
 
 ## Install
 
@@ -239,7 +239,7 @@ The only acceptable variations are the documented query parameters above.
 
 ## References
 
-- Source: https://github.com/riccardoio/authai
+- Source: https://github.com/authai-io/authai
 - Dashboard: https://authai.io
 - npm packages: `@authai/react`, `@authai/server`
 - Full integration docs: https://authai.io/docs/integration

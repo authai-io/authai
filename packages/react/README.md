@@ -8,7 +8,7 @@ For AI codegen tools and quick prototypes, follow the canonical instructions:
 
 > **https://authai.io/llms.txt**
 
-For human-written integration, see [docs/integration.md](https://github.com/riccardoio/authai/blob/main/docs/integration.md).
+For human-written integration, see [docs/integration.md](https://github.com/authai-io/authai/blob/main/docs/integration.md).
 
 ## API surface
 

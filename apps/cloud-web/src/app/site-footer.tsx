@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-const GITHUB_URL = "https://github.com/riccardoio/authai";
+const GITHUB_URL = "https://github.com/authai-io/authai";
 const COMPANY = "Interface Labs Ltd";
 const COMPANY_ADDRESS = "124 City Road, London, England, EC1V 2NX";
 const SUPPORT_EMAIL = "support@authai.io";
@@ -29,7 +29,9 @@ export function SiteFooter() {
         <div className="site-footer-brand">
           <Link href="/" className="site-footer-mark" aria-label="AuthAI home">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M12 2 L22 20 L2 20 Z" />
+              <rect x="0" y="0" width="10" height="10" rx="2" />
+              <rect x="14" y="14" width="10" height="10" rx="2" />
+              <rect x="7" y="7" width="10" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
             </svg>
             AuthAI
           </Link>

@@ -5,7 +5,7 @@
   "homepage": "https://authai.io",
   "repository": {
     "type": "git",
-    "url": "https://github.com/riccardoio/authai.git",
+    "url": "https://github.com/authai-io/authai.git",
     "directory": "packages/cli"
   },
   "license": "MIT",
