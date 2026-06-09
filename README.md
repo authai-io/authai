@@ -2,6 +2,9 @@
 
 **Sign in with ChatGPT — for app builders.**
 
+> [!NOTE]
+> **Enjoying AuthAI?** Something more ambitious is in the works — [get in touch](mailto:riccardo@interfacelabs.ai?subject=Saw%20AuthAI%20-%20what%20next%3F).
+
 Let your end users pay for AI features with their own ChatGPT subscription. They sign in via OAuth, your app calls models on their behalf, the cost stays on their plan. Drop in a React component, point the official `openai` SDK at the relay, done.
 
 Self-hostable. No cloud service to sign up for. You run the relay yourself; the SDK talks to it.
