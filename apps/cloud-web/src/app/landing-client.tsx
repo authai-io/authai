@@ -195,6 +195,38 @@ export function LandingClient({ session }: { session: SessionShape }) {
                 />
                 <span>Bolt</span>
               </a>
+              <a
+                className="landing-platform"
+                href="https://cursor.com"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Cursor"
+              >
+                <img
+                  src="/brands/cursor.svg"
+                  alt=""
+                  width={22}
+                  height={22}
+                  className="landing-platform-mark"
+                />
+                <span>Cursor</span>
+              </a>
+              <a
+                className="landing-platform"
+                href="https://claude.com/claude-code"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Claude Code by Anthropic"
+              >
+                <img
+                  src="/brands/claude.svg"
+                  alt=""
+                  width={22}
+                  height={22}
+                  className="landing-platform-mark"
+                />
+                <span>Claude Code</span>
+              </a>
             </div>
             <p className="landing-platforms-hint">
               Tell their AI: <em>“Read https://authai.io/llms.txt”</em>. It

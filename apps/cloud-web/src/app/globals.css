@@ -2007,7 +2007,7 @@ a { color: inherit; }
 .landing-platforms-row {
   display: flex;
   align-items: center;
-  gap: 56px;
+  gap: 40px;
   flex-wrap: wrap;
   justify-content: center;
 }
