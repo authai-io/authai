@@ -2,9 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 const SITE_URL = "https://authai.io";
-const SITE_TITLE = "AuthAI — auth for AI builders";
+// Title kept to ~55-60 chars (SERP sweet spot); description ~120 chars so it
+// survives both Google's ~160-char SERP cut and social previews' ~125-char cut
+// without truncating the punchline.
+const SITE_TITLE = "AuthAI — sign in with ChatGPT, Grok, or Copilot subscription";
 const SITE_DESCRIPTION =
-  "Build AI products without the AI bill. Your users sign in with their AI subscription; every model call lands on their plan. Across ChatGPT, Grok, and Copilot. Free, open-source, self-hostable.";
+  "Build AI products without the AI bill. Users sign in with their ChatGPT, Grok, or Copilot subscription.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
