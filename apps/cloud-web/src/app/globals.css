@@ -1747,7 +1747,7 @@ a { color: inherit; }
   z-index: 1;
   max-width: 1080px;
   margin: 0 auto;
-  padding: 96px 28px 24px;
+  padding: 56px 28px 24px;
 }
 .landing-flow-heading {
   font-size: 12px;
@@ -1932,18 +1932,18 @@ a { color: inherit; }
 .landing-demo-band {
   display: flex;
   justify-content: center;
-  padding: 12px 24px 4px;
+  padding: 20px 24px 8px;
 }
 .landing-demo-link {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 18px;
-  background: rgba(29, 77, 255, 0.05);
-  border: 1px solid rgba(29, 77, 255, 0.16);
+  gap: 12px;
+  padding: 14px 24px;
+  background: rgba(29, 77, 255, 0.07);
+  border: 1px solid rgba(29, 77, 255, 0.22);
   border-radius: 999px;
   color: var(--text-body);
-  font-size: 13.5px;
+  font-size: 14.5px;
   line-height: 1.4;
   text-decoration: none;
   transition: background var(--dur-micro) var(--ease-standard),
@@ -2052,44 +2052,142 @@ a { color: inherit; }
   color: rgba(255, 255, 255, 0.65);
 }
 
-/* === Landing trust band (standalone micro-section between hero and flow) === */
-.landing-trust-band {
+/* === Landing security section (replaces the old one-sentence trust band) ===
+   Center-aligned narrow column. Reads as confident, not loud — eyebrow
+   tag + headline + supporting paragraph + link, no card, no panel. */
+.landing-security {
   display: flex;
   justify-content: center;
-  padding: 8px 24px 32px;
-  text-align: center;
+  padding: 56px 28px 16px;
 }
-.landing-trust {
+.landing-security-inner {
+  max-width: 640px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.landing-security-eyebrow {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  margin: 0;
-  font-size: 12.5px;
-  line-height: 1.55;
-  color: var(--text-muted);
-  max-width: 560px;
-}
-.landing-trust svg {
-  flex-shrink: 0;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: var(--text-subtle);
 }
-.landing-trust-link {
-  color: var(--accent);
+.landing-security-eyebrow svg {
+  color: var(--text-subtle);
+}
+.landing-security-headline {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+.landing-security-sub {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+.landing-security-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 14px;
   font-weight: 500;
+  color: var(--accent);
   text-decoration: none;
-  white-space: nowrap;
+  transition: gap var(--dur-micro) var(--ease-standard);
 }
-.landing-trust-link:hover {
-  text-decoration: underline;
+.landing-security-link:hover {
+  gap: 10px;
 }
-.landing[data-theme="dark"] .landing-trust {
-  color: rgba(255, 255, 255, 0.55);
-}
-.landing[data-theme="dark"] .landing-trust svg {
-  color: rgba(255, 255, 255, 0.5);
-}
-.landing[data-theme="dark"] .landing-trust-link {
+.landing[data-theme="dark"] .landing-security-link {
   color: #5aa6ff;
+}
+@media (max-width: 640px) {
+  .landing-security-headline {
+    font-size: 24px;
+  }
+}
+
+/* === Landing "Why developers use AuthAI" — benefit cards before runways ===
+   Distinct from the numbered flow above: no step numbers, icon-led,
+   horizontal grid. Cards are flat (no border) to feel lighter than the
+   runway cards below them. */
+.landing-why {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 28px 8px;
+}
+.landing-why-heading {
+  margin: 0 0 28px;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-align: center;
+  color: var(--text-primary);
+}
+.landing-why-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.landing-why-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 4px 0;
+}
+.landing-why-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(29, 77, 255, 0.08);
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.landing-why-card-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.landing-why-card-body {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+.landing-why-card-body code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--text-body);
+  background: var(--surface-muted);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.landing[data-theme="dark"] .landing-why-icon {
+  background: rgba(90, 166, 255, 0.10);
+  color: #5aa6ff;
+}
+@media (max-width: 760px) {
+  .landing-why-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
 }
 
 /* === Runways — "Two ways to run it" cards === */

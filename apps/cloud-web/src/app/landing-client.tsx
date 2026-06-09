@@ -121,6 +121,40 @@ export function LandingClient({ session }: { session: SessionShape }) {
             <CodePreview />
           </main>
 
+          <section className="landing-flow" aria-labelledby="how-it-works">
+            <h2 id="how-it-works" className="landing-flow-heading">
+              How it works
+            </h2>
+            <ol className="landing-flow-steps">
+              <li className="landing-flow-step">
+                <span className="landing-flow-num">1</span>
+                <h3 className="landing-flow-step-title">Your user signs in</h3>
+                <p className="landing-flow-step-body">
+                  One button. ChatGPT, Grok, or Copilot. Whichever subscription
+                  they already pay for. 30-second OAuth on the provider's site.
+                </p>
+              </li>
+              <li className="landing-flow-step">
+                <span className="landing-flow-num">2</span>
+                <h3 className="landing-flow-step-title">Your backend gets a JWT</h3>
+                <p className="landing-flow-step-body">
+                  Use it like an API key. The <code>openai</code> SDK keeps
+                  working. Point <code>baseURL</code> at the relay and the
+                  rest of your code is unchanged.
+                </p>
+              </li>
+              <li className="landing-flow-step">
+                <span className="landing-flow-num">3</span>
+                <h3 className="landing-flow-step-title">Calls land on their plan</h3>
+                <p className="landing-flow-step-body">
+                  Every model call bills against the user's subscription,
+                  not yours. We never see their AI tokens. They&apos;re
+                  encrypted before they reach us.
+                </p>
+              </li>
+            </ol>
+          </section>
+
           <section className="landing-demo-band" aria-label="Live demo">
             <a
               href={DEMO_URL}
@@ -143,7 +177,7 @@ export function LandingClient({ session }: { session: SessionShape }) {
 
           <section className="landing-platforms" aria-labelledby="platforms-heading">
             <h2 id="platforms-heading" className="landing-platforms-label">
-              Drop into your AI codegen of choice
+              Works with every AI coding tool
             </h2>
             <div className="landing-platforms-row">
               <a
@@ -234,15 +268,83 @@ export function LandingClient({ session }: { session: SessionShape }) {
             </p>
           </section>
 
-          <section className="landing-trust-band" aria-label="Security">
-            <p className="landing-trust">
-              <LockIcon />
-              We can&apos;t read your users&apos; AI tokens. Not even if we
-              wanted to.{" "}
-              <Link href="/docs/security" className="landing-trust-link">
-                Read the security model →
+          <section className="landing-security" aria-labelledby="security-heading">
+            <div className="landing-security-inner">
+              <span className="landing-security-eyebrow">
+                <LockIcon />
+                Security
+              </span>
+              <h2 id="security-heading" className="landing-security-headline">
+                We can&apos;t read your users&apos; AI tokens.
+              </h2>
+              <p className="landing-security-sub">
+                Every user&apos;s OAuth credentials are encrypted with a
+                fresh per-record AES-256 key. That key never lives on our
+                servers — it&apos;s embedded in the JWT issued to the
+                user. A full database leak still leaves the credentials
+                opaque.
+              </p>
+              <Link href="/docs/security" className="landing-security-link">
+                Read the security model
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
               </Link>
-            </p>
+            </div>
+          </section>
+
+          <section className="landing-why" aria-labelledby="why-heading">
+            <h2 id="why-heading" className="landing-why-heading">
+              Why developers use AuthAI
+            </h2>
+            <div className="landing-why-grid">
+              <article className="landing-why-card">
+                <span className="landing-why-icon" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23" />
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                  </svg>
+                </span>
+                <h3 className="landing-why-card-title">Zero inference cost</h3>
+                <p className="landing-why-card-body">
+                  Users bring their own ChatGPT, Grok, or Copilot
+                  subscription. Your bill doesn&apos;t scale with usage —
+                  theirs does.
+                </p>
+              </article>
+              <article className="landing-why-card">
+                <span className="landing-why-icon" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="16 18 22 12 16 6" />
+                    <polyline points="8 6 2 12 8 18" />
+                  </svg>
+                </span>
+                <h3 className="landing-why-card-title">Drop-in OpenAI SDK</h3>
+                <p className="landing-why-card-body">
+                  Point <code>baseURL</code> at the relay. Keep the{" "}
+                  <code>openai</code> SDK. The rest of your code is
+                  unchanged.
+                </p>
+              </article>
+              <article className="landing-why-card">
+                <span className="landing-why-icon" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                  </svg>
+                </span>
+                <h3 className="landing-why-card-title">Open source, MIT</h3>
+                <p className="landing-why-card-body">
+                  Self-hostable from day one. No vendor lock-in.
+                  The cloud is a convenience, not a moat.
+                </p>
+              </article>
+            </div>
           </section>
 
           <section className="landing-runways" aria-labelledby="runways-heading">
@@ -287,40 +389,6 @@ export function LandingClient({ session }: { session: SessionShape }) {
                 </Link>
               </article>
             </div>
-          </section>
-
-          <section className="landing-flow" aria-labelledby="how-it-works">
-            <h2 id="how-it-works" className="landing-flow-heading">
-              How it works
-            </h2>
-            <ol className="landing-flow-steps">
-              <li className="landing-flow-step">
-                <span className="landing-flow-num">1</span>
-                <h3 className="landing-flow-step-title">Your user signs in</h3>
-                <p className="landing-flow-step-body">
-                  One button. ChatGPT, Grok, or Copilot. Whichever subscription
-                  they already pay for. 30-second OAuth on the provider's site.
-                </p>
-              </li>
-              <li className="landing-flow-step">
-                <span className="landing-flow-num">2</span>
-                <h3 className="landing-flow-step-title">Your backend gets a JWT</h3>
-                <p className="landing-flow-step-body">
-                  Use it like an API key. The <code>openai</code> SDK keeps
-                  working. Point <code>baseURL</code> at the relay and the
-                  rest of your code is unchanged.
-                </p>
-              </li>
-              <li className="landing-flow-step">
-                <span className="landing-flow-num">3</span>
-                <h3 className="landing-flow-step-title">Calls land on their plan</h3>
-                <p className="landing-flow-step-body">
-                  Every model call bills against the user's subscription,
-                  not yours. We never see their AI tokens. They&apos;re
-                  encrypted before they reach us.
-                </p>
-              </li>
-            </ol>
           </section>
 
           <SiteFooter />
