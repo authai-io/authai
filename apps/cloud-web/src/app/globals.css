@@ -121,19 +121,6 @@ a { color: inherit; }
   z-index: -1;
   pointer-events: none;
 }
-.landing::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(to right, rgba(0, 0, 0, 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.035) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: radial-gradient(ellipse at center top, #000 30%, transparent 75%);
-  -webkit-mask-image: radial-gradient(ellipse at center top, #000 30%, transparent 75%);
-  z-index: -1;
-  pointer-events: none;
-}
 .landing-topbar {
   display: flex;
   align-items: center;
@@ -302,11 +289,6 @@ a { color: inherit; }
     radial-gradient(circle at 72% 25%, rgba(0, 255, 136, 0.42), transparent 42%);
   filter: blur(36px);
   mix-blend-mode: screen;
-}
-.landing[data-theme="dark"]::after {
-  background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
 }
 .landing[data-theme="dark"] .landing-brand,
 .landing[data-theme="dark"] .landing-brand-mark {
