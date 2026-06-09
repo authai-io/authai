@@ -214,9 +214,10 @@ async function waitForBrowserCallback(
           return;
         }
 
-        res.writeHead(200, { "Content-Type": "text/html" });
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
         res.end(
-          `<!doctype html><html><body style="font-family:system-ui;padding:48px;text-align:center">` +
+          `<!doctype html><html><head><meta charset="utf-8"></head>` +
+            `<body style="font-family:system-ui;padding:48px;text-align:center">` +
             `<h2>You can close this tab.</h2>` +
             `<p>Return to your terminal — the CLI has your key.</p>` +
             `</body></html>`,
