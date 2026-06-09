@@ -36,7 +36,7 @@ export function LandingClient({ session }: { session: SessionShape }) {
         <div className="landing" data-theme={mode}>
           <a
             className="landing-announce"
-            href="mailto:riccardo@speedrunlabs.com?subject=Saw%20AuthAI"
+            href="mailto:riccardo@interfacelabs.ai?subject=Saw%20AuthAI"
           >
             <span className="landing-announce-dot" aria-hidden="true" />
             <span className="landing-announce-text">
