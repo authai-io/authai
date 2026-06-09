@@ -20,6 +20,7 @@ const SECTIONS = [
   { id: "introduction", title: "Introduction", subtitle: "What AuthAI is and why" },
   { id: "installation", title: "Installation", subtitle: "Self-host the relay" },
   { id: "integration",  title: "Integration",  subtitle: "Wire the SDKs into your app" },
+  { id: "lovable",      title: "Lovable",      subtitle: "Add AuthAI to a Lovable project" },
   { id: "security",     title: "Security",     subtitle: "Cryptography & threat model" },
   { id: "reference",    title: "Reference",    subtitle: "How it works under the hood" },
 ] as const;

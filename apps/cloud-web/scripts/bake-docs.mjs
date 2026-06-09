@@ -27,6 +27,7 @@ const SOURCES = [
   { slug: "introduction", file: "introduction.md" },
   { slug: "installation", file: "installation.md" },
   { slug: "integration",  file: "integration.md"  },
+  { slug: "lovable",      file: "lovable.md"      },
   { slug: "security",     file: "security.md"     },
   { slug: "reference",    file: "reference.md"    },
 ];
