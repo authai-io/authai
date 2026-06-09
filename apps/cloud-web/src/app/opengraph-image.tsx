@@ -5,15 +5,17 @@ export const alt =
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// Dark-mode tokens. Background sits just above pure-black with a cool
-// tint so the brand-blue accent reads harmoniously. Aurora and a center
-// glow give the canvas depth instead of a flat void.
-const BG = "#0d0f13";
-const WASH_RGB = "13, 15, 19";
+// Dark-mode tokens. Background sits in the "lifted gunmetal" range, well
+// above pure-black, with a slight cool tint so the brand-blue accent reads
+// harmoniously. Aurora and a center glow give the canvas depth instead of
+// a flat void. Terminal card is lifted further (about +8 lightness) so it
+// floats off the background.
+const BG = "#181b22";
+const WASH_RGB = "24, 27, 34";
 const FG = "#ededed";
 const SUBTLE = "#a3a3a3";
-const TERMINAL_BG = "#1a1d24";
-const TERMINAL_BORDER = "#272b34";
+const TERMINAL_BG = "#22262f";
+const TERMINAL_BORDER = "#323845";
 const RADIUS = 10;
 const MARK_RADIUS = 4;
 
