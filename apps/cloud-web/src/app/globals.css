@@ -1985,6 +1985,76 @@ a { color: inherit; }
   border-color: rgba(90, 166, 255, 0.26);
 }
 
+/* === Landing platforms strip ("Drop into your AI codegen") ===
+   Three monochrome wordmarks between the demo band and the trust band.
+   Color stays muted so it reads as "compatible with" not "logo carousel". */
+.landing-platforms {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 24px 24px 8px;
+  text-align: center;
+}
+.landing-platforms-label {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+.landing-platforms-row {
+  display: flex;
+  align-items: center;
+  gap: 56px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.landing-platform {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  opacity: 0.7;
+  transition: opacity var(--dur-micro) var(--ease-standard),
+    color var(--dur-micro) var(--ease-standard);
+}
+.landing-platform svg {
+  flex-shrink: 0;
+  color: currentColor;
+}
+.landing-platform:hover {
+  color: var(--text-primary);
+  opacity: 1;
+}
+.landing-platforms-hint {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--text-subtle);
+  max-width: 520px;
+  line-height: 1.5;
+}
+.landing-platforms-hint em {
+  font-style: normal;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.landing[data-theme="dark"] .landing-platform {
+  color: rgba(255, 255, 255, 0.55);
+}
+.landing[data-theme="dark"] .landing-platform:hover {
+  color: #fff;
+}
+.landing[data-theme="dark"] .landing-platforms-hint em {
+  color: rgba(255, 255, 255, 0.65);
+}
+
 /* === Landing trust band (standalone micro-section between hero and flow) === */
 .landing-trust-band {
   display: flex;

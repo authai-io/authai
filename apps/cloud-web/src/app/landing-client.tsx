@@ -141,6 +141,70 @@ export function LandingClient({ session }: { session: SessionShape }) {
             </a>
           </section>
 
+          <section className="landing-platforms" aria-labelledby="platforms-heading">
+            <h2 id="platforms-heading" className="landing-platforms-label">
+              Drop into your AI codegen of choice
+            </h2>
+            <div className="landing-platforms-row">
+              <a
+                className="landing-platform"
+                href="/docs/lovable"
+                aria-label="Lovable integration guide"
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M12 21s-7-4.5-9-9c-1.5-3.5 1-7 4-7 2 0 3.5 1 5 3 1.5-2 3-3 5-3 3 0 5.5 3.5 4 7-2 4.5-9 9-9 9z" />
+                </svg>
+                <span>Lovable</span>
+              </a>
+              <a
+                className="landing-platform"
+                href="https://v0.app"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="v0 by Vercel"
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M12 2 L22 20 L2 20 Z" />
+                </svg>
+                <span>v0</span>
+              </a>
+              <a
+                className="landing-platform"
+                href="https://bolt.new"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Bolt.new by StackBlitz"
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M13 2 L4 14 H11 L10 22 L20 10 H13 Z" />
+                </svg>
+                <span>Bolt</span>
+              </a>
+            </div>
+            <p className="landing-platforms-hint">
+              Tell their AI: <em>“Read https://authai.io/llms.txt”</em>. It
+              generates the integration for you.
+            </p>
+          </section>
+
           <section className="landing-trust-band" aria-label="Security">
             <p className="landing-trust">
               <LockIcon />
