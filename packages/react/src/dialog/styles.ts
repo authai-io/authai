@@ -342,8 +342,14 @@ const CSS = `
   color: var(--authai-foreground-muted);
   font-weight: 600;
   text-decoration: none;
+  transition: color 150ms;
 }
 .authai-footer-link:hover { color: var(--authai-foreground); }
+.authai-footer-link:focus-visible {
+  outline: 2px solid var(--authai-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 
 @media (max-width: 480px) {
   .authai-card { padding: 24px; }
