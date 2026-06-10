@@ -114,6 +114,14 @@ function SignInScreen({
           </p>
 
           <div className="signin-providers">
+            <SignIn className="signin-primary-provider">
+              Login with AI
+            </SignIn>
+
+            <div className="signin-divider" aria-hidden="true">
+              <span>or</span>
+            </div>
+
             <SignIn provider="openai">
               <ProviderMark id="openai" />
               Continue with ChatGPT
