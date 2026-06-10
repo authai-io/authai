@@ -4,7 +4,7 @@ All notable changes to AuthAI are documented here. The format is based on [Keep 
 
 This file tracks all six npm packages collectively. Per-package CHANGELOGs may be added later if the release cadences diverge.
 
-## [Unreleased]
+## [0.2.0] - 2026-06-10
 
 ### Changed
 

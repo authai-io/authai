@@ -21,35 +21,20 @@ WORKDIR /repo
 # hit Docker's layer cache.
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 
-COPY packages/relay/package.json                packages/relay/package.json
-COPY packages/relay-store-sqlite/package.json   packages/relay-store-sqlite/package.json
-COPY packages/relay-store-postgres/package.json packages/relay-store-postgres/package.json
-COPY packages/cloud/package.json                packages/cloud/package.json
-COPY packages/cli/package.json                  packages/cli/package.json
-COPY packages/server/package.json               packages/server/package.json
-COPY packages/react/package.json                packages/react/package.json
-COPY apps/cloud-relay-server/package.json       apps/cloud-relay-server/package.json
-COPY apps/relay-server/package.json             apps/relay-server/package.json
-COPY apps/cloud-web/package.json                apps/cloud-web/package.json
 COPY apps/demo-react/package.json            apps/demo-react/package.json
 COPY apps/demo-backend/package.json          apps/demo-backend/package.json
 
-# Install deps for the demo only — demo-backend (server) and
-# demo-react (SPA build). The `...` suffix pulls workspace deps too
-# (@authai-io/server, @authai-io/react, react/react-dom, hono, openai).
+# Install deps for the demo only. AuthAI SDK packages resolve from npm,
+# not from local workspace packages, in this production image.
 RUN pnpm install --frozen-lockfile \
     --filter demo-backend... \
     --filter demo-react...
 
 # Copy source for everything we'll touch during build/runtime.
-COPY packages/server      packages/server
-COPY packages/react       packages/react
 COPY apps/demo-backend apps/demo-backend
 COPY apps/demo-react   apps/demo-react
 
-# Build the SPA. Both @authai-io/react and @authai-io/server publish their
-# .ts source directly (no dist/), so Vite + tsx handle TypeScript at
-# build/runtime — no separate compile step for those packages.
+# Build the SPA against the published @authai-io/react package.
 RUN pnpm --filter demo-react build
 
 # ---------------------------------------------------------------------------
