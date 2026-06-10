@@ -111,7 +111,9 @@ export function AuthAIDialog(props: AuthAIDialogProps) {
         {displayStep === "explain" && (
           <Step1
             appName={appName}
-            presetProvider={presetProvider}
+            // Unreachable fallback: explain is only entered with a preset provider
+            // (provider.tsx entry rule); keeps the prop type narrow without a branch.
+            provider={presetProvider ?? "openai"}
             ready={true}
             error={error}
             onContinue={onContinueExplain}

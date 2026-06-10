@@ -1,41 +1,54 @@
 import type { ProviderId } from "../auth.js";
-import { LockIcon } from "./icons.js";
+import { DialogFooter } from "./Footer.js";
+import { CardIcon, DisconnectIcon, KeyIcon } from "./icons.js";
 import { PROVIDER_META } from "./providers.js";
 
 export type Step1Props = {
   appName: string;
-  presetProvider: ProviderId | null;
+  provider: ProviderId;
   ready: boolean;
   error: string | null;
   onContinue: () => void;
   onCancel: () => void;
 };
 
-export function Step1({
-  appName,
-  presetProvider,
-  ready,
-  error,
-  onContinue,
-  onCancel,
-}: Step1Props) {
-  const providerName = presetProvider ? PROVIDER_META[presetProvider].displayName : null;
-  const title = providerName
-    ? <>Connect {providerName} to <span className="authai-strong">{appName}</span></>
-    : <>Connect an AI subscription to <span className="authai-strong">{appName}</span></>;
-  const body = providerName
-    ? `Sign in once. ${appName} will use your ${providerName} subscription to run AI features.`
-    : `Sign in once. ${appName} will use your subscription to run AI features.`;
-  const continueLabel = ready ? (presetProvider ? "Continue" : "Choose provider") : "Preparing…";
+/**
+ * Consent step. Shown only when the app presets a provider
+ * (signIn("openai"), <SignIn provider="...">); with no preset the flow
+ * enters at the picker instead. Three scannable trust bullets answer the
+ * first-time user's "is this safe?": where they sign in, who pays, how
+ * to undo it. Claims must stay in sync with docs/security.md.
+ */
+export function Step1({ appName, provider, ready, error, onContinue, onCancel }: Step1Props) {
+  const meta = PROVIDER_META[provider];
 
   return (
     <div className="authai-step">
-      <div className="authai-icon-badge"><LockIcon /></div>
-      <h2 className="authai-title">{title}</h2>
-      <p className="authai-body">{body}</p>
-      <p className="authai-muted">
-        {appName} never sees your password. You can revoke access anytime in your provider's settings.
-      </p>
+      <h2 className="authai-title">
+        Use your {meta.displayName} plan in <span className="authai-strong">{appName}</span>
+      </h2>
+
+      <div className="authai-bullets">
+        <div className="authai-bullet">
+          <span className="authai-bullet-icon"><KeyIcon /></span>
+          <p className="authai-bullet-text">
+            <strong>You sign in on {meta.companyName}&apos;s site.</strong>{" "}
+            {appName} never sees your password.
+          </p>
+        </div>
+        <div className="authai-bullet">
+          <span className="authai-bullet-icon"><CardIcon /></span>
+          <p className="authai-bullet-text">
+            <strong>No new bill.</strong> AI features run on the plan you already pay for.
+          </p>
+        </div>
+        <div className="authai-bullet">
+          <span className="authai-bullet-icon"><DisconnectIcon /></span>
+          <p className="authai-bullet-text">
+            <strong>Disconnect anytime</strong> in your {meta.companyName} settings.
+          </p>
+        </div>
+      </div>
 
       <button
         type="button"
@@ -43,7 +56,7 @@ export function Step1({
         onClick={onContinue}
         disabled={!ready}
       >
-        {continueLabel}
+        {ready ? `Continue to ${meta.displayName}` : "Preparing…"}
       </button>
 
       {error && <p className="authai-error">{error}</p>}
@@ -51,6 +64,8 @@ export function Step1({
       <button type="button" className="authai-button-secondary" onClick={onCancel}>
         Cancel
       </button>
+
+      <DialogFooter />
     </div>
   );
 }
