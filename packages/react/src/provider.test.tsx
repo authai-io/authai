@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { AuthAIProvider, useAuthAI } from "./provider.js";
 import { configureAuthAI } from "./configure.js";
 import { resetSingletonForTests } from "./singleton.js";
@@ -198,5 +198,42 @@ describe("<SignIn> with singleton", () => {
     // surface an error state via the singleton, not throw at render time.
     render(<SignIn>Sign in</SignIn>);
     expect(screen.getByText("Sign in")).toBeInTheDocument();
+  });
+});
+
+describe("signIn entry step", () => {
+  beforeEach(() => resetSingletonForTests());
+
+  function SignInProbe() {
+    const auth = useAuthAI();
+    return (
+      <div>
+        <button onClick={() => auth.signIn()}>open-no-preset</button>
+        <button onClick={() => auth.signIn("openai")}>open-preset</button>
+      </div>
+    );
+  }
+
+  it("signIn() with no provider opens the picker directly (no interstitial)", () => {
+    render(
+      <AuthAIProvider relayUrl="https://r" appName="P">
+        <SignInProbe />
+      </AuthAIProvider>,
+    );
+    fireEvent.click(screen.getByText("open-no-preset"));
+    expect(screen.getByText("Choose your AI provider")).toBeInTheDocument();
+    expect(screen.queryByText(/Use your .* plan in/)).not.toBeInTheDocument();
+  });
+
+  it("signIn(\"openai\") opens the provider-specific consent step", () => {
+    render(
+      <AuthAIProvider relayUrl="https://r" appName="P">
+        <SignInProbe />
+      </AuthAIProvider>,
+    );
+    fireEvent.click(screen.getByText("open-preset"));
+    expect(
+      screen.getByRole("heading", { name: "Use your ChatGPT plan in P" }),
+    ).toBeInTheDocument();
   });
 });

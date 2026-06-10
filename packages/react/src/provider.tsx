@@ -148,11 +148,15 @@ export function AuthAIProvider({
     setCode(null);
     setPickedProvider(null);
     if (provider) {
+      // Preset provider: show the provider-specific consent step.
       setPresetProvider(provider);
+      setPhase("explain");
     } else {
+      // No preset: enter at the picker, matching the singleton path
+      // (signInSingleton) which has always worked this way.
       setPresetProvider(null);
+      setPhase("picker");
     }
-    setPhase("explain");
   }, [appName]);
 
   const handleExplainContinue = useCallback(() => {
