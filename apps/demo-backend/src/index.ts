@@ -39,6 +39,16 @@ function extractJwt(authHeader: string | undefined): string | null {
   return match ? match[1]! : null;
 }
 
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+function unexpectedError(c: any, route: string, err: unknown, status: 424 | 500 = 500) {
+  const message = errorMessage(err);
+  console.error(`[${route}] ${message}`, err instanceof Error && err.stack ? err.stack : "");
+  return c.json({ error: message }, status);
+}
+
 app.get("/api/me", async (c) => {
   const jwt = extractJwt(c.req.header("Authorization"));
   try {
@@ -50,7 +60,7 @@ app.get("/api/me", async (c) => {
     return c.json({ user, session });
   } catch (err) {
     if (err instanceof AuthAIUnauthorized) return c.json({ error: "unauthorized" }, 401);
-    return c.json({ error: err instanceof Error ? err.message : String(err) }, 502);
+    return unexpectedError(c, "me", err);
   }
 });
 
@@ -67,7 +77,7 @@ app.get("/api/models", async (c) => {
     return c.json({ data: list.data.map((m: any) => ({ id: m.id, owned_by: m.owned_by })) });
   } catch (err) {
     if (err instanceof AuthAIUnauthorized) return c.json({ error: "unauthorized" }, 401);
-    return c.json({ error: err instanceof Error ? err.message : String(err) }, 502);
+    return unexpectedError(c, "models", err, 424);
   }
 });
 
@@ -105,7 +115,7 @@ app.post("/api/chat", async (c) => {
     });
   } catch (err) {
     if (err instanceof AuthAIUnauthorized) return c.json({ error: "unauthorized" }, 401);
-    return c.json({ error: err instanceof Error ? err.message : String(err) }, 502);
+    return unexpectedError(c, "chat", err, 424);
   }
 });
 

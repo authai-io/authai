@@ -17,6 +17,22 @@ const PROVIDER_LABEL: Record<ProviderId, string> = {
   github: "GitHub Copilot",
 };
 
+async function responseError(res: Response): Promise<string> {
+  const type = res.headers.get("content-type") ?? "";
+  if (type.includes("application/json")) {
+    const json = (await res.json().catch(() => null)) as { error?: unknown } | null;
+    if (typeof json?.error === "string" && json.error.length > 0) {
+      return `${res.status} ${json.error}`;
+    }
+  }
+
+  const text = (await res.text().catch(() => "")).trim();
+  if (text.startsWith("<!DOCTYPE") || text.startsWith("<html")) {
+    return `${res.status} upstream service returned an HTML error page`;
+  }
+  return `${res.status} ${text.slice(0, 300)}`.trim();
+}
+
 export function Chat({ jwt, provider, backendUrl, onSignOut }: Props) {
   const effectiveProvider: ProviderId = provider ?? "openai";
   const [models, setModels] = useState<ModelEntry[]>([]);
@@ -37,7 +53,7 @@ export function Chat({ jwt, provider, backendUrl, onSignOut }: Props) {
         const res = await fetch(`${backendUrl}/api/models`, {
           headers: { Authorization: `Bearer ${jwt}` },
         });
-        if (!res.ok) throw new Error(`${res.status} ${await res.text().catch(() => "")}`);
+        if (!res.ok) throw new Error(await responseError(res));
         const json = (await res.json()) as { data: ModelEntry[] };
         if (cancelled) return;
         setModels(json.data);
@@ -134,8 +150,7 @@ export function Chat({ jwt, provider, backendUrl, onSignOut }: Props) {
         body: JSON.stringify({ model, messages: next }),
       });
       if (!res.ok || !res.body) {
-        const body = await res.text().catch(() => "");
-        throw new Error(`backend ${res.status}: ${body}`);
+        throw new Error(`backend ${await responseError(res)}`);
       }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
