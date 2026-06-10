@@ -294,6 +294,57 @@ const CSS = `
   align-items: center;
 }
 
+.authai-bullets {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+  margin: 2px 0;
+}
+.authai-bullet {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.authai-bullet-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--authai-surface-muted);
+  color: var(--authai-foreground);
+  flex-shrink: 0;
+}
+.authai-bullet-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--authai-foreground-muted);
+  margin: 0;
+}
+.authai-bullet-text strong {
+  color: var(--authai-foreground);
+  font-weight: 600;
+}
+.authai-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--authai-foreground-muted);
+  font-size: 12px;
+  border-top: 1px solid var(--authai-border);
+  padding-top: 14px;
+  margin-top: 2px;
+}
+.authai-footer-link {
+  color: var(--authai-foreground-muted);
+  font-weight: 600;
+  text-decoration: none;
+}
+.authai-footer-link:hover { color: var(--authai-foreground); }
+
 @media (max-width: 480px) {
   .authai-card { padding: 24px; }
   .authai-code-block { font-size: 22px; letter-spacing: 3px; padding: 16px; }
